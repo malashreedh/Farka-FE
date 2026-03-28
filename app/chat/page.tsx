@@ -1,491 +1,518 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  ArrowRight,
+  Bot,
+  BriefcaseBusiness,
+  ChevronRight,
+  MapPin,
+  Send,
+  Sparkles,
+  UserRound,
+  Wrench,
+} from "lucide-react";
+
+import ChatBubble from "@/components/ChatBubble";
+import LoadingState from "@/components/LoadingState";
+import QuickActions from "@/components/QuickActions";
+import SkillTag from "@/components/SkillTag";
 import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
-import type { Language, WorkflowStage, TradeCategoryEnum } from "@/lib/types";
+import type { ChatMessage, Language, TradeCategoryEnum, WorkflowStage } from "@/lib/types";
 import { SKILL_TAGS } from "@/lib/types";
+import { DISTRICT_ACTIONS, DOMAIN_OPTIONS, PATH_ACTIONS, SAVINGS_ACTIONS } from "@/lib/workflows";
 
-// ─── Stage display label ──────────────────────────────────────────────────────
 const STAGE_LABELS: Record<WorkflowStage, string> = {
-  initial:                    "Welcome",
-  language_set:               "Getting Started",
-  collecting_basics:          "Your Background",
-  collecting_experience:      "Your Experience",
-  path_decision:              "Your Goal",
-  collecting_skills:          "Your Skills",
-  collecting_business_details:"Business Details",
-  profile_complete:           "Profile Ready",
-  job_matching:               "Finding Jobs...",
-  checklist_generated:        "Plan Ready",
+  initial: "Arrival",
+  language_set: "Context",
+  collecting_basics: "Work Domain",
+  collecting_experience: "Experience",
+  path_decision: "Direction",
+  collecting_skills: "Strengths",
+  collecting_business_details: "Business Details",
+  profile_complete: "Profile Complete",
+  job_matching: "Matching Jobs",
+  checklist_generated: "Building Roadmap",
 };
 
-// ─── Skill Tag pill ───────────────────────────────────────────────────────────
-function SkillTag({
-  label,
-  selected,
-  onToggle,
-}: {
-  label: string;
-  selected: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      onClick={onToggle}
-      className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 focus:outline-none"
-      style={{
-        background: selected ? "var(--amber)" : "rgba(245,158,11,0.08)",
-        borderColor: selected ? "var(--amber)" : "rgba(245,158,11,0.3)",
-        color: selected ? "#0a1628" : "var(--amber)",
-        transform: selected ? "scale(1.05)" : "scale(1)",
-      }}
-      aria-pressed={selected}
-    >
-      {selected && <span className="mr-1">✓</span>}
-      {label}
-    </button>
-  );
+function detectLanguage(text: string): Language {
+  const nepaliChars = (text.match(/[\u0900-\u097F]/g) ?? []).length;
+  return nepaliChars > 2 ? "ne" : "en";
 }
 
-// ─── Chat Bubble ──────────────────────────────────────────────────────────────
-function ChatBubble({
-  role,
-  content,
-}: {
-  role: "user" | "assistant";
-  content: string;
-}) {
-  const isUser = role === "user";
+function inferTrade(messages: ChatMessage[]): TradeCategoryEnum {
+  const combined = messages
+    .filter((message) => message.role === "user")
+    .map((message) => message.content.toLowerCase())
+    .join(" ");
+
+  const tradeRules: Record<TradeCategoryEnum, string[]> = {
+    construction: ["construction", "builder", "mason", "site", "plumbing", "electric", "निर्माण"],
+    hospitality: ["hotel", "hospitality", "restaurant", "kitchen", "housekeeping", "होटल"],
+    manufacturing: ["factory", "machine", "manufacturing", "welding", "assembly", "फ्याक्ट्री"],
+    agriculture: ["farm", "agriculture", "crop", "livestock", "harvest", "कृषि"],
+    domestic: ["domestic", "caregiver", "childcare", "elder care", "home", "घरेलु"],
+    transport: ["driver", "transport", "logistics", "cargo", "fleet", "ड्राइभर"],
+    tech: ["it", "developer", "computer", "digital", "support", "प्रविधि"],
+    other: [],
+  };
+
+  for (const [trade, keywords] of Object.entries(tradeRules) as [TradeCategoryEnum, string[]][]) {
+    if (keywords.some((keyword) => combined.includes(keyword))) {
+      return trade;
+    }
+  }
+
+  return "construction";
+}
+
+function getLastAssistantMessage(messages: ChatMessage[]): string {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index]?.role === "assistant") {
+      return messages[index]?.content ?? "";
+    }
+  }
+
+  return "";
+}
+
+function TypingIndicator({ language }: { language: Language }) {
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} chat-bubble-in`}>
-      {!isUser && (
-        <div
-          className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold mr-3 mt-1"
-          style={{ background: "var(--teal)", color: "#fff" }}
-        >
-          F
+    <div className="fade-in-up flex gap-3">
+      <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--accent)] shadow-soft">
+        <Bot size={18} />
+      </div>
+      <div className="rounded-[24px] rounded-tl-md border border-white/8 bg-[color:var(--surface)] px-5 py-4 shadow-soft">
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--muted-strong)]">
+            {getText("chat_thinking", language)}
+          </span>
+          <div className="flex gap-1.5">
+            <span className="typing-dot" />
+            <span className="typing-dot" style={{ animationDelay: "0.15s" }} />
+            <span className="typing-dot" style={{ animationDelay: "0.3s" }} />
+          </div>
         </div>
-      )}
-      <div
-        className="max-w-[78%] px-5 py-3 rounded-2xl shadow-lg leading-relaxed text-sm md:text-base"
-        style={
-          isUser
-            ? {
-                background: "var(--amber)",
-                color: "#0a1628",
-                borderTopRightRadius: "4px",
-                fontWeight: 500,
-              }
-            : {
-                background: "rgba(26,158,126,0.18)",
-                border: "1px solid rgba(26,158,126,0.3)",
-                color: "#f1f5f9",
-                borderTopLeftRadius: "4px",
-              }
-        }
-      >
-        {content}
       </div>
     </div>
   );
 }
 
-// ─── Typing indicator ─────────────────────────────────────────────────────────
-function TypingIndicator({ lang }: { lang: Language }) {
-  return (
-    <div className="flex justify-start items-center gap-3 chat-bubble-in">
-      <div
-        className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold"
-        style={{ background: "var(--teal)", color: "#fff" }}
-      >
-        F
-      </div>
-      <div
-        className="px-5 py-3 rounded-2xl flex items-center gap-1"
-        style={{
-          background: "rgba(26,158,126,0.12)",
-          border: "1px solid rgba(26,158,126,0.2)",
-        }}
-      >
-        <span className="text-xs text-white/40 mr-2">{getText("chat_thinking", lang)}</span>
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="w-1.5 h-1.5 rounded-full bg-teal-400 typing-dot"
-            style={{ animationDelay: `${i * 0.2}s` }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Redirect overlay ─────────────────────────────────────────────────────────
 function RedirectOverlay({ message }: { message: string }) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6"
-      style={{ background: "rgba(10,22,40,0.96)", backdropFilter: "blur(8px)" }}
-    >
-      <div
-        className="w-16 h-16 rounded-full border-4 border-t-transparent animate-spin"
-        style={{ borderColor: "var(--teal)", borderTopColor: "transparent" }}
-      />
-      <p
-        className="text-lg font-semibold animate-pulse"
-        style={{ color: "var(--teal)" }}
-      >
-        {message}
-      </p>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(8,12,20,0.82)] backdrop-blur-xl">
+      <div className="fade-in-up flex max-w-md flex-col items-center rounded-[32px] border border-white/10 bg-[color:var(--surface)] px-8 py-10 text-center shadow-panel">
+        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-[color:var(--line-strong)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]">
+          <Sparkles size={26} className="animate-pulse" />
+        </div>
+        <p className="text-lg font-semibold text-[color:var(--text)]">{message}</p>
+        <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+          We&apos;re preparing the next view using the profile we just built together.
+        </p>
+      </div>
     </div>
   );
 }
 
-// ─── Main Chat Page ───────────────────────────────────────────────────────────
 export default function ChatPage() {
-  const [messages, setMessages] = useState<
-    { role: "user" | "assistant"; content: string }[]
-  >([]);
-  const [input, setInput] = useState("");
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [profileId, setProfileId] = useState<string | null>(null);
-  const [stage, setStage] = useState<WorkflowStage>("initial");
-  const [lang, setLang] = useState<Language>("en");
-  const [loading, setLoading] = useState(false);
-  const [initializing, setInitializing] = useState(true);
-  const [redirecting, setRedirecting] = useState<string | null>(null);
-
-  // Skill tag state — shown when stage === "collecting_skills"
-  const [tradeCategory, setTradeCategory] = useState<TradeCategoryEnum | null>(null);
-  const [selectedSkills, setSelectedSkills] = useState<Set<string>>(new Set());
-  const [skillsConfirmed, setSkillsConfirmed] = useState(false);
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // ── Init session on mount ────────────────────────────────────────────────
+  const [sessionId, setSessionId] = useState("");
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [stage, setStage] = useState<WorkflowStage>("initial");
+  const [language, setLanguage] = useState<Language>("en");
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [redirectMessage, setRedirectMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+
   useEffect(() => {
-    const initChat = async () => {
+    const bootstrap = async () => {
       try {
-        // Restore from sessionStorage if page was refreshed mid-chat
-        const savedSession = sessionStorage.getItem("farka_session_id");
-        const savedProfile = sessionStorage.getItem("farka_profile_id");
-
-        if (savedSession) {
-          // Session exists — we can't replay history without a GET /chat/session endpoint,
-          // so we start fresh but keep profile_id for results pages.
-          setSessionId(savedSession);
-          if (savedProfile) setProfileId(savedProfile);
-        }
-
         const data = await api.startChat();
         setSessionId(data.session_id);
         setStage(data.stage);
         sessionStorage.setItem("farka_session_id", data.session_id);
-        setMessages([{ role: "assistant", content: data.message }]);
-      } catch (err) {
-        console.error("Failed to start chat:", err);
         setMessages([
           {
             role: "assistant",
-            content:
-              "Namaste! I'm having trouble connecting right now. Please refresh the page to try again.",
+            content: data.message,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      } catch {
+        setMessages([
+          {
+            role: "assistant",
+            content: "I couldn't reach the backend just now. Please check the API URL and try again.",
+            timestamp: new Date().toISOString(),
           },
         ]);
       } finally {
-        setInitializing(false);
+        setLoading(false);
       }
     };
-    initChat();
+
+    bootstrap();
   }, []);
 
-  // ── Auto-scroll ──────────────────────────────────────────────────────────
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, sending, stage]);
 
-  // ── Detect language from bot responses ──────────────────────────────────
-  const detectLang = useCallback((text: string): Language => {
-    const nepaliChars = (text.match(/[\u0900-\u097F]/g) || []).length;
-    return nepaliChars > 2 ? "ne" : "en";
-  }, []);
+  useEffect(() => {
+    sessionStorage.setItem("farka_lang", language);
+  }, [language]);
 
-  // ── Send message ─────────────────────────────────────────────────────────
-  const handleSendMessage = async (overrideText?: string) => {
-    const text = overrideText ?? input.trim();
-    if (!text || !sessionId || loading) return;
+  const lastAssistantMessage = getLastAssistantMessage(messages).toLowerCase();
+  const inferredTrade = inferTrade(messages);
+  const visibleSkills = SKILL_TAGS[inferredTrade] ?? [];
 
-    if (!overrideText) setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
-    setLoading(true);
+  const shouldShowDomainOptions =
+    stage === "collecting_basics" &&
+    (lastAssistantMessage.includes("type of work") ||
+      lastAssistantMessage.includes("work did you do") ||
+      lastAssistantMessage.includes("कस्तो काम") ||
+      lastAssistantMessage.includes("काम"));
+
+  const shouldShowPathActions =
+    stage === "path_decision" &&
+    (lastAssistantMessage.includes("job") ||
+      lastAssistantMessage.includes("business") ||
+      lastAssistantMessage.includes("जागिर") ||
+      lastAssistantMessage.includes("व्यवसाय"));
+
+  const shouldShowBusinessDistricts =
+    stage === "collecting_business_details" &&
+    (lastAssistantMessage.includes("district") || lastAssistantMessage.includes("जिल्ला"));
+
+  const shouldShowBusinessSavings =
+    stage === "collecting_business_details" &&
+    (lastAssistantMessage.includes("savings") || lastAssistantMessage.includes("बचत"));
+
+  async function submitMessage(overrideMessage?: string) {
+    const content = (overrideMessage ?? input).trim();
+    if (!content || !sessionId || sending) {
+      return;
+    }
+
+    const userEntry: ChatMessage = {
+      role: "user",
+      content,
+      timestamp: new Date().toISOString(),
+    };
+
+    const optimisticLanguage = messages.length <= 1 ? detectLanguage(content) : language;
+    setLanguage(optimisticLanguage);
+    setMessages((current) => [...current, userEntry]);
+    setInput("");
+    setSending(true);
 
     try {
-      // KEY FIX: body field is "content" not "message"
-      const response = await api.sendMessage(sessionId, text);
-
-      setMessages((prev) => [...prev, { role: "assistant", content: response.message }]);
+      const response = await api.sendMessage(sessionId, content);
+      const nextLanguage = detectLanguage(response.message);
+      setLanguage(nextLanguage);
       setStage(response.stage);
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content: response.message,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
 
-      // Detect language from bot reply
-      const detectedLang = detectLang(response.message);
-      setLang(detectedLang);
-
-      // Store profile_id whenever backend sends it
       if (response.profile_id) {
         setProfileId(response.profile_id);
         sessionStorage.setItem("farka_profile_id", response.profile_id);
       }
 
-      // Handle redirects with a loading overlay
-      if (response.redirect === "jobs") {
-        setRedirecting(getText("loading_jobs", detectedLang));
-        setTimeout(() => {
-          router.push(`/results/jobs?profile_id=${response.profile_id}`);
-        }, 2000);
-      } else if (response.redirect === "checklist") {
-        setRedirecting(getText("loading_checklist", detectedLang));
-        setTimeout(() => {
-          router.push(`/results/business?profile_id=${response.profile_id}`);
-        }, 2000);
-      }
+      if (response.redirect && response.profile_id) {
+        const overlayMessage =
+          response.redirect === "jobs"
+            ? getText("loading_jobs", nextLanguage)
+            : getText("loading_checklist", nextLanguage);
+        setRedirectMessage(overlayMessage);
 
-      // Unlock skill tag UI when entering collecting_skills stage
-      if (response.stage === "collecting_skills") {
-        // Try to derive trade from profile — for now show all possible construction tags
-        // The backend message will contain the relevant trade; we'll surface generic tags
-        setSkillsConfirmed(false);
-        setSelectedSkills(new Set());
+        window.setTimeout(() => {
+          if (response.redirect === "jobs") {
+            router.push(`/results/jobs?profile_id=${response.profile_id}`);
+          } else {
+            router.push(`/results/business?profile_id=${response.profile_id}`);
+          }
+        }, 1400);
       }
-    } catch (err) {
-      console.error("Message error:", err);
-      setMessages((prev) => [
-        ...prev,
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Something went wrong.";
+      setMessages((current) => [
+        ...current,
         {
           role: "assistant",
-          content: "Sorry, something went wrong. Please try again.",
+          content: detail,
+          timestamp: new Date().toISOString(),
         },
       ]);
     } finally {
-      setLoading(false);
-      inputRef.current?.focus();
+      setSending(false);
+      window.setTimeout(() => inputRef.current?.focus(), 20);
     }
-  };
+  }
 
-  // ── Confirm selected skills by sending them as a message ──────────────
-  const handleConfirmSkills = () => {
-    if (selectedSkills.size === 0) return;
-    const skillList = Array.from(selectedSkills).join(", ");
-    setSkillsConfirmed(true);
-    handleSendMessage(`My skills are: ${skillList}`);
-  };
+  function toggleSkill(skill: string) {
+    setSelectedSkills((current) =>
+      current.includes(skill) ? current.filter((item) => item !== skill) : [...current, skill],
+    );
+  }
 
-  // ── Determine which skill tags to show ────────────────────────────────
-  // We show tags for the detected trade, falling back to construction
-  const visibleSkillTags: string[] =
-    stage === "collecting_skills" && !skillsConfirmed
-      ? SKILL_TAGS[tradeCategory ?? "construction"]
-      : [];
+  async function submitSelectedSkills() {
+    if (!selectedSkills.length) {
+      return;
+    }
+    await submitMessage(selectedSkills.join(", "));
+  }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  if (initializing) {
+  if (loading) {
     return (
-      <div
-        className="flex flex-col items-center justify-center h-[calc(100vh-80px)]"
-        style={{ background: "var(--navy)" }}
-      >
-        <div
-          className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin mb-4"
-          style={{ borderColor: "var(--teal)", borderTopColor: "transparent" }}
-        />
-        <p className="text-sm animate-pulse" style={{ color: "var(--teal)" }}>
-          Starting your journey...
-        </p>
-      </div>
+      <main className="page-shell flex items-center px-6">
+        <div className="mx-auto w-full max-w-4xl">
+          <LoadingState message="Starting your FARKA session..." />
+        </div>
+      </main>
     );
   }
 
   return (
     <>
-      <style>{`
-        @keyframes bubbleIn {
-          from { opacity: 0; transform: translateY(10px) scale(0.97); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .chat-bubble-in {
-          animation: bubbleIn 0.3s ease both;
-        }
-        @keyframes typingBounce {
-          0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-          40%           { transform: translateY(-5px); opacity: 1; }
-        }
-        .typing-dot {
-          animation: typingBounce 1.2s ease-in-out infinite;
-        }
-      `}</style>
+      {redirectMessage ? <RedirectOverlay message={redirectMessage} /> : null}
 
-      {redirecting && <RedirectOverlay message={redirecting} />}
-
-      <div
-        className="flex flex-col h-[calc(100vh-80px)]"
-        style={{ background: "var(--navy)" }}
-      >
-        {/* ── Top bar with stage indicator ── */}
-        <div
-          className="flex items-center justify-between px-6 py-3 border-b"
-          style={{ borderColor: "rgba(255,255,255,0.07)", background: "rgba(10,22,40,0.8)", backdropFilter: "blur(8px)" }}
-        >
-          <div className="flex items-center gap-3">
-            <span
-              className="font-bold text-lg tracking-tight"
-              style={{ color: "var(--teal)", fontFamily: "'DM Sans', sans-serif" }}
-            >
-              FARKA फर्क
-            </span>
-          </div>
-          {/* Stage indicator — spec requirement */}
-          <div className="flex items-center gap-2">
-            <span
-              className="w-2 h-2 rounded-full animate-pulse"
-              style={{ background: stage === "job_matching" || stage === "checklist_generated" ? "var(--amber)" : "var(--teal)" }}
-            />
-            <span
-              className="text-xs tracking-wide"
-              style={{ color: "rgba(255,255,255,0.4)" }}
-            >
-              {STAGE_LABELS[stage] ?? stage}
-            </span>
-          </div>
-        </div>
-
-        {/* ── Messages area ── */}
-        <main
-          className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-5 mesh-bg"
-        >
-          <div className="max-w-3xl mx-auto space-y-5">
-            {messages.map((msg, idx) => (
-              <ChatBubble key={idx} role={msg.role} content={msg.content} />
-            ))}
-
-            {/* Typing indicator while waiting for response */}
-            {loading && <TypingIndicator lang={lang} />}
-
-            {/* ── Skill tag picker — shown at collecting_skills stage ── */}
-            {visibleSkillTags.length > 0 && (
-              <div
-                className="p-5 rounded-2xl chat-bubble-in"
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                <p
-                  className="text-sm font-semibold mb-3"
-                  style={{ color: "rgba(255,255,255,0.6)" }}
-                >
-                  {getText("skill_tags_prompt", lang)}
+      <main className="page-shell">
+        <section className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[1.55fr_0.75fr] lg:px-8">
+          <div className="panel-raised flex min-h-[75vh] flex-col overflow-hidden rounded-[32px]">
+            <header className="flex items-center justify-between border-b border-white/8 px-5 py-4 md:px-7">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">
+                  Conversational Guide
                 </p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {visibleSkillTags.map((tag) => (
-                    <SkillTag
-                      key={tag}
-                      label={tag}
-                      selected={selectedSkills.has(tag)}
-                      onToggle={() => {
-                        setSelectedSkills((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(tag)) next.delete(tag);
-                          else next.add(tag);
-                          return next;
-                        });
-                      }}
-                    />
-                  ))}
+                <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">
+                  Build the profile naturally
+                </h1>
+              </div>
+              <div className="hidden rounded-full border border-white/10 bg-[color:var(--surface-strong)] px-4 py-2 text-xs uppercase tracking-[0.2em] text-[color:var(--accent)] md:block">
+                {STAGE_LABELS[stage]}
+              </div>
+            </header>
+
+            <div className="chat-scroll flex-1 space-y-4 overflow-y-auto px-4 py-5 md:px-6">
+              {messages.map((message, index) => (
+                <ChatBubble key={`${message.timestamp}-${index}`} {...message} />
+              ))}
+
+              {sending ? <TypingIndicator language={language} /> : null}
+
+              {shouldShowDomainOptions ? (
+                <QuickActions
+                  title={language === "ne" ? "सामान्य कार्य क्षेत्र छान्नुस्" : "Choose a common work domain"}
+                  subtitle={
+                    language === "ne"
+                      ? "तपाईंको मुख्य कामसँग मिल्ने क्षेत्र रोज्न सक्नुहुन्छ।"
+                      : "Pick the closest work domain if typing it out feels slower."
+                  }
+                  actions={DOMAIN_OPTIONS.map((option) => ({
+                    label: language === "ne" ? option.titleNe : option.titleEn,
+                    description: language === "ne" ? option.introNe : option.introEn,
+                    value: language === "ne" ? option.samplePromptNe : option.samplePromptEn,
+                  }))}
+                  onSelect={(value) => submitMessage(value)}
+                />
+              ) : null}
+
+              {stage === "collecting_skills" ? (
+                <section className="fade-in-up rounded-[28px] border border-white/8 bg-[color:var(--surface)] p-4 shadow-soft">
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[color:var(--text)]">
+                        {getText("skill_tags_prompt", language)}
+                      </p>
+                      <p className="mt-1 text-sm text-[color:var(--muted)]">
+                        {language === "ne"
+                          ? "तपाईंले वास्तवमै प्रयोग गरेका सीप छान्नुस्।"
+                          : "Pick the strengths you used most often abroad."}
+                      </p>
+                    </div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--accent)]">
+                      <Wrench size={18} />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {visibleSkills.map((skill) => (
+                      <SkillTag
+                        key={skill}
+                        label={skill}
+                        selected={selectedSkills.includes(skill)}
+                        onToggle={() => toggleSkill(skill)}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={submitSelectedSkills}
+                    disabled={!selectedSkills.length || sending}
+                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-[color:var(--ink-strong)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ArrowRight size={16} />
+                    Confirm and continue
+                  </button>
+                </section>
+              ) : null}
+
+              {shouldShowPathActions ? (
+                <QuickActions
+                  title={language === "ne" ? "तपाईंलाई के सहयोग चाहिन्छ?" : "Choose what you want help with"}
+                  subtitle={
+                    language === "ne"
+                      ? "जागिर वा सानो व्यवसाय, जुन अहिले बढी उपयोगी छ त्यो रोज्नुस्।"
+                      : "Pick the direction you want FARKA to take next."
+                  }
+                  actions={(language === "ne" ? PATH_ACTIONS.ne : PATH_ACTIONS.en).map((item) => ({
+                    label: item,
+                    value: item,
+                  }))}
+                  onSelect={(value) => submitMessage(value)}
+                  compact
+                />
+              ) : null}
+
+              {shouldShowBusinessDistricts ? (
+                <QuickActions
+                  title={language === "ne" ? "लक्षित जिल्ला" : "Target district"}
+                  subtitle={
+                    language === "ne"
+                      ? "नेपाल फर्किएपछि काम वा व्यवसाय सुरु गर्न चाहेको जिल्ला छान्नुस्।"
+                      : "Choose the district you want to return to first."
+                  }
+                  actions={(language === "ne" ? DISTRICT_ACTIONS.ne : DISTRICT_ACTIONS.en).map((district) => ({
+                    label: district,
+                    value: district,
+                  }))}
+                  onSelect={(value) => submitMessage(value)}
+                  compact
+                />
+              ) : null}
+
+              {shouldShowBusinessSavings ? (
+                <QuickActions
+                  title={language === "ne" ? "बचतको दायरा" : "Savings band"}
+                  subtitle={
+                    language === "ne"
+                      ? "आफ्नो उपलब्ध बचतको नजिकको दायरा छान्नुस्।"
+                      : "Choose the closest savings range so the checklist stays realistic."
+                  }
+                  actions={(language === "ne" ? SAVINGS_ACTIONS.ne : SAVINGS_ACTIONS.en).map((band) => ({
+                    label: band,
+                    value: band,
+                  }))}
+                  onSelect={(value) => submitMessage(value)}
+                  compact
+                />
+              ) : null}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            <footer className="border-t border-white/8 bg-[rgba(13,18,31,0.82)] px-4 py-4 backdrop-blur md:px-6">
+              <div className="flex items-end gap-3">
+                <div className="flex-1 rounded-[28px] border border-white/10 bg-[color:var(--surface)] px-4 py-3 shadow-soft">
+                  <input
+                    ref={inputRef}
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        submitMessage();
+                      }
+                    }}
+                    placeholder={getText("chat_placeholder", language)}
+                    disabled={sending || !!redirectMessage}
+                    className="w-full bg-transparent text-[15px] text-[color:var(--text)] outline-none placeholder:text-[color:var(--muted)]"
+                  />
                 </div>
                 <button
-                  onClick={handleConfirmSkills}
-                  disabled={selectedSkills.size === 0 || loading}
-                  className="px-6 py-2 rounded-full text-sm font-bold transition-all duration-200 disabled:opacity-40"
-                  style={{ background: "var(--teal)", color: "#fff" }}
+                  type="button"
+                  onClick={() => submitMessage()}
+                  disabled={sending || !input.trim() || !!redirectMessage}
+                  className="flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--accent)] text-[color:var(--ink-strong)] shadow-soft transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  Confirm Skills ({selectedSkills.size} selected)
+                  <Send size={18} />
                 </button>
               </div>
-            )}
-
-            <div ref={scrollRef} />
+            </footer>
           </div>
-        </main>
 
-        {/* ── Input bar ── */}
-        <footer
-          className="px-4 py-4 border-t sticky bottom-0"
-          style={{
-            borderColor: "rgba(255,255,255,0.08)",
-            background: "rgba(10,22,40,0.95)",
-            backdropFilter: "blur(12px)",
-          }}
-        >
-          <div className="max-w-3xl mx-auto relative">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              maxLength={500}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder={getText("chat_placeholder", lang)}
-              disabled={loading || !!redirecting}
-              className="w-full rounded-full px-6 py-4 pr-16 text-sm focus:outline-none transition-all duration-200 disabled:opacity-50"
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "#f1f5f9",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "rgba(26,158,126,0.5)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-              }}
-            />
-            <button
-              onClick={() => handleSendMessage()}
-              disabled={loading || !input.trim() || !!redirecting}
-              aria-label="Send message"
-              className="absolute right-2 top-2 bottom-2 aspect-square rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 disabled:opacity-40 disabled:hover:scale-100"
-              style={{ background: "var(--teal)" }}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </button>
-          </div>
-          {/* Character count hint */}
-          {input.length > 400 && (
-            <p className="text-center text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
-              {500 - input.length} characters remaining
-            </p>
-          )}
-        </footer>
-      </div>
+          <aside className="space-y-4">
+            <div className="panel-subtle rounded-[30px] p-5">
+              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Session summary</p>
+              <div className="mt-5 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl border border-white/10 bg-[color:var(--surface-strong)] p-2 text-[color:var(--accent)]">
+                    <Sparkles size={16} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-[color:var(--muted)]">Current focus</p>
+                    <p className="mt-1 text-base font-semibold text-[color:var(--text)]">{STAGE_LABELS[stage]}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl border border-white/10 bg-[color:var(--surface-strong)] p-2 text-[color:var(--terracotta)]">
+                    <UserRound size={16} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-[color:var(--muted)]">Profile status</p>
+                    <p className="mt-1 text-base font-semibold text-[color:var(--text)]">
+                      {profileId ? "Profile in progress" : "Collecting details"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl border border-white/10 bg-[color:var(--surface-strong)] p-2 text-[color:var(--saffron)]">
+                    <MapPin size={16} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-[color:var(--muted)]">Language mode</p>
+                    <p className="mt-1 text-base font-semibold text-[color:var(--text)]">
+                      {language === "ne" ? "Nepali" : "English"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="panel-subtle rounded-[30px] p-5">
+              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">How this stays smooth</p>
+              <div className="mt-4 space-y-3 text-sm leading-7 text-[color:var(--muted)]">
+                <p className="flex gap-3">
+                  <BriefcaseBusiness size={16} className="mt-1 shrink-0 text-[color:var(--accent)]" />
+                  The conversation remains primary. Quick actions only appear when they help the current question.
+                </p>
+                <p className="flex gap-3">
+                  <ChevronRight size={16} className="mt-1 shrink-0 text-[color:var(--terracotta)]" />
+                  You can type naturally in one long sentence or use the guided cards when you want speed.
+                </p>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
     </>
   );
 }
