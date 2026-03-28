@@ -1,5 +1,5 @@
 // NEXT_PUBLIC_ ensures this is available in the browser
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 export const api = {
   startChat: async () => {
