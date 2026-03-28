@@ -2,42 +2,65 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { ArrowLeft, MessageSquareMore, Mountain, Sparkles } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  
-  // Don't show the "Back" button on the home page itself
   const isHomePage = pathname === "/";
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 bg-[var(--navy)]/80 backdrop-blur-md border-b border-white/5">
-      <div className="flex items-center gap-6">
-        {/* The "Back" Button (Hidden on Home) */}
-        {!isHomePage && (
-          <button 
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-sm text-white/40 hover:text-[var(--teal)] transition-colors group"
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-[rgba(10,13,21,0.74)] backdrop-blur-xl">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
+        <div className="flex items-center gap-4">
+          {!isHomePage ? (
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[color:var(--surface)] px-4 py-2 text-sm text-[color:var(--muted)] transition hover:border-[color:var(--line-strong)] hover:text-[color:var(--text)]"
+            >
+              <ArrowLeft size={15} />
+              Back
+            </button>
+          ) : null}
+
+          <Link href="/" className="inline-flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-[color:var(--surface)] text-[color:var(--accent)] shadow-soft">
+              <Mountain size={20} />
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.3em] text-[color:var(--muted-strong)]">Farka</p>
+              <p className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--text)]">Return with direction</p>
+            </div>
+          </Link>
+        </div>
+
+        <nav className="hidden items-center gap-3 md:flex">
+          <Link
+            href="/#how-it-works"
+            className="rounded-full px-4 py-2 text-sm text-[color:var(--muted)] transition hover:text-[color:var(--text)]"
           >
-            <span className="group-hover:-translate-x-1 transition-transform">←</span>
-            <span>Back</span>
-          </button>
-        )}
-
-        {/* The Logo (Always links to home) */}
-        <Link href="/" className="flex items-center gap-2">
-          <span className="font-display text-2xl font-bold tracking-tight text-[var(--teal)]">
-            FARKA <span className="text-white/20 font-light ml-1">| फर्क</span>
+            How it works
+          </Link>
+          <Link
+            href="/#paths"
+            className="rounded-full px-4 py-2 text-sm text-[color:var(--muted)] transition hover:text-[color:var(--text)]"
+          >
+            Pathways
+          </Link>
+          <Link
+            href="/chat"
+            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line-strong)] bg-[color:var(--accent-soft)] px-5 py-2.5 text-sm font-semibold text-[color:var(--accent)] transition hover:brightness-110"
+          >
+            <MessageSquareMore size={16} />
+            Start chat
+          </Link>
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[color:var(--surface)] px-4 py-2 text-xs uppercase tracking-[0.24em] text-[color:var(--muted-strong)]">
+            <Sparkles size={14} />
+            Nepal-first
           </span>
-        </Link>
+        </nav>
       </div>
-
-      <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-white/40">
-        <Link href="/#features" className="hover:text-white transition-colors">How It Works</Link>
-        <Link href="/chat" className="px-4 py-1.5 rounded-full bg-[var(--teal)]/10 text-[var(--teal)] border border-[var(--teal)]/20 hover:bg-[var(--teal)]/20 transition-all">
-          Start Chat
-        </Link>
-      </nav>
     </header>
   );
 }

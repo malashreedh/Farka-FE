@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+
+import Navbar from "@/components/Navbar";
+
 import "./globals.css";
-import Navbar from "@/components/Navbar"; // Import your new component
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
 });
+
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
@@ -15,8 +18,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "FARKA | फर्क",
-  description: "Connecting Nepali migrant workers with opportunities back home.",
+  title: "FARKA | Return with direction",
+  description: "A guided return-planning platform for Nepali workers abroad exploring jobs and business options back home.",
 };
 
 export default function RootLayout({
@@ -26,16 +29,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[var(--navy)]`}
-      >
-        {/* The Navbar stays outside the main content so it doesn't rerender unnecessarily */}
+      <body className={`${geistSans.variable} ${geistMono.variable} bg-[color:var(--bg)] antialiased`}>
         <Navbar />
-        
-        {/* We add pt-20 (padding-top) so the fixed Navbar doesn't hide the top of your pages */}
-        <main className="pt-20 min-h-screen">
-          {children}
-        </main>
+        <main className="pt-24">{children}</main>
       </body>
     </html>
   );
