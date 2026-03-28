@@ -1,29 +1,36 @@
-// NEXT_PUBLIC_ ensures this is available in the browser
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const BASE_URL = "https://farka-be.onrender.com/api/v1";
 
 export const api = {
-  startChat: async () => {
-    const res = await fetch(`${BASE_URL}/chat/start`, { 
-      method: "POST",
-      headers: { "Content-Type": "application/json" }
-    });
-    const json = await res.json();
-    return json.data; // { session_id, message, stage }
-  },
+  // CHAT
+  startChat: () => 
+    fetch(`${BASE_URL}/chat/start`, { method: "POST" }).then(res => res.json()),
   
-  sendMessage: async (session_id: string, content: string) => {
-    const res = await fetch(`${BASE_URL}/chat/message`, {
+  sendMessage: (session_id: string, content: string) => 
+    fetch(`${BASE_URL}/chat/message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id, content }),
-    });
-    const json = await res.json();
-    return json.data; // { message, stage, profile_id, redirect }
-  },
+    }).then(res => res.json()),
 
-  getJobMatches: async (profile_id: string) => {
-    const res = await fetch(`${BASE_URL}/jobs/matches/${profile_id}`);
-    const json = await res.json();
-    return json.data; // Array of JobMatch objects
-  }
+  // JOBS
+  getJobMatches: (profile_id: string) => 
+    fetch(`${BASE_URL}/jobs/matches/${profile_id}`).then(res => res.json()),
+
+  triggerJobMatch: (profile_id: string) => 
+    fetch(`${BASE_URL}/jobs/match`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile_id }),
+    }).then(res => res.json()),
+
+  // BUSINESS (Renamed to match your Page's call)
+  getBusinessChecklist: (profile_id: string) => 
+    fetch(`${BASE_URL}/business/checklist/${profile_id}`).then(res => res.json()),
+
+  generateChecklist: (profile_id: string) => 
+    fetch(`${BASE_URL}/business/checklist`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile_id }),
+    }).then(res => res.json()),
 };

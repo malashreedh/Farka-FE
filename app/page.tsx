@@ -1,7 +1,8 @@
+// app>page.tsx
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react"; // Removed unused useRef
 import { getText } from "@/lib/language";
 
 // ─── Animated Stat Component ─────────────────────────────────────────────────
@@ -78,7 +79,7 @@ function MountainSilhouette() {
         viewBox="0 0 1440 320"
         preserveAspectRatio="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="w-full h-[clamp(140px,22vw,280px)] block"
+        className="w-full h-[clamp(140px, 22vw, 280px)] block"
       >
         <defs>
           <radialGradient id="snowGlow" cx="50%" cy="0%" r="60%">
@@ -101,13 +102,6 @@ function MountainSilhouette() {
 // ─── Main Landing Page ────────────────────────────────────────────────────────
 export default function LandingPage() {
   const lang = "en";
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const cards = [
     { icon: "🗣️", title: getText("share_story_title", lang) ?? "Share Your Story", description: getText("share_story_desc", lang) ?? "Tell FARKA about your skills and journey.", delay: "0.1s", accent: "var(--teal)" },
@@ -117,13 +111,7 @@ export default function LandingPage() {
 
   return (
     <div className="mesh-bg min-h-screen text-white">
-      {/* Navigation */}
-      <header className={`fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center transition-all ${scrolled ? "bg-[var(--navy)]/80 backdrop-blur-md border-b border-white/10" : "bg-transparent"}`}>
-        <span className="font-display text-2xl font-bold text-[var(--teal)]">FARKA</span>
-        <Link href="/chat" className="px-6 py-2 rounded-full border border-[var(--teal)]/30 bg-[var(--teal)]/10 text-[var(--teal)] hover:bg-[var(--teal)]/20 transition-all text-sm font-medium">
-          Get Started
-        </Link>
-      </header>
+      {/* ⚠️ INTERNAL HEADER REMOVED: Now handled by Navbar in layout.tsx ⚠️ */}
 
       {/* Hero */}
       <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pb-[300px]">
@@ -167,7 +155,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="relative z-20 py-12 border-t border-white/5 bg-[var(--navy)] text-center">
         <p className="text-white/20 text-sm">
-          FARKA फर्का • Nepal-US Hackathon 2026
+          FARKA फर्क • Team 72 • Nepal-US Hackathon 2026
         </p>
       </footer>
     </div>
