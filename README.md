@@ -1,4 +1,5 @@
 # Farka Frontend
+farka-fe.vercel.app
 
 Frontend for **FARKA** — a Nepal-first return planning platform built for Team 72 at the Nepal-US Hackathon 2026.
 
