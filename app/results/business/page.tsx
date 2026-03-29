@@ -170,17 +170,10 @@ function BusinessContent() {
               : "This is a grounded launch sequence shaped by trade, district, and savings, so the plan feels practical rather than generic."}
           </p>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">District</p>
-              
               <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">{checklist.district}</p>
-            </div>
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">
-                {language === "ne" ? "क्षेत्र" : "Trade"}
-              </p>
-              <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--accent)]">{checklist.trade}</p>
             </div>
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">{getText("progress_label", language)}</p>
