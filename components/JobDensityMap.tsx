@@ -4,17 +4,27 @@ import { useMemo, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import L from "leaflet";
 
+import { getText, type Language } from "@/lib/language";
 import type { JobDensity, TradeCategoryEnum } from "@/lib/types";
 import { DISTRICT_COORDINATES, TRADE_COLORS } from "@/lib/nepalGeo";
 
 delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
 
+function replaceTokens(template: string, values: Record<string, string | number>) {
+  return Object.entries(values).reduce(
+    (current, [key, value]) => current.replaceAll(`{${key}}`, String(value)),
+    template,
+  );
+}
+
 export default function JobDensityMap({
   density,
   initialTrade = "construction",
+  language,
 }: {
   density: JobDensity[];
   initialTrade?: TradeCategoryEnum | string;
+  language: Language;
 }) {
   const [selectedTrade, setSelectedTrade] = useState<string>(initialTrade);
 
@@ -31,11 +41,15 @@ export default function JobDensityMap({
   const topDistrict = filtered.slice().sort((a, b) => b.job_count - a.job_count)[0];
 
   return (
-    <section className="panel-subtle rounded-[32px] p-5">
+    <section className="panel-subtle rounded-[32px] p-5 md:p-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Job density map</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">Where jobs are clustering in Nepal</h2>
+          <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">
+            {getText("jobs_map_sub", language)}
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">
+            {getText("jobs_map_title", language)}
+          </h2>
         </div>
         <div className="flex flex-wrap gap-2">
           {trades.map((trade) => (
@@ -62,8 +76,12 @@ export default function JobDensityMap({
 
       <p className="mt-4 text-sm leading-7 text-[color:var(--muted)]">
         {topDistrict
-          ? `${topDistrict.job_count} jobs in ${topDistrict.district} for ${selectedTrade}.`
-          : "Select a trade category to explore district-level job concentration."}
+          ? replaceTokens(getText("map_summary", language), {
+              count: topDistrict.job_count,
+              district: topDistrict.district,
+              trade: selectedTrade,
+            })
+          : getText("jobs_map_empty", language)}
       </p>
 
       <div className="mt-5 overflow-hidden rounded-[28px] border border-[color:var(--line)]">
@@ -90,7 +108,11 @@ export default function JobDensityMap({
                 <Popup>
                   <strong>{item.district}</strong>
                   <br />
-                  {item.job_count} jobs in {item.trade_category}
+                  {replaceTokens(getText("map_summary", language), {
+                    count: item.job_count,
+                    district: item.district,
+                    trade: item.trade_category,
+                  })}
                 </Popup>
               </CircleMarker>
             );

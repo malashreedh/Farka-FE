@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Banknote, Clock3, LineChart, Sparkles } from "lucide-react";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { api } from "@/lib/api";
 import type { BusinessViability, Profile } from "@/lib/types";
 
@@ -24,6 +25,8 @@ export default function FinancialViabilityPanel({
   profileId: string;
   profile: Profile | null;
 }) {
+  const { language: uiLanguage } = useLanguage();
+  const language = profile?.language_pref ?? uiLanguage;
   const [savings, setSavings] = useState<number>(getDefaultSavings(profile));
   const [data, setData] = useState<BusinessViability | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,8 +60,14 @@ export default function FinancialViabilityPanel({
     <section className="panel-subtle rounded-[32px] p-6 md:p-8">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Financial viability</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">Can this business actually work with your savings?</h2>
+          <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">
+            {language === "ne" ? "आर्थिक व्यवहार्यता" : "Financial viability"}
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">
+            {language === "ne"
+              ? "के यो व्यवसाय तपाईंको बचतबाट साँच्चै सम्भव छ?"
+              : "Can this business actually work with your savings?"}
+          </h2>
         </div>
         <div className="flex h-12 w-12 items-center justify-center rounded-3xl border border-[color:var(--line)] bg-[color:var(--surface)] text-[color:var(--accent)]">
           <LineChart size={20} />
@@ -66,7 +75,9 @@ export default function FinancialViabilityPanel({
       </div>
 
       <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center">
-        <label className="text-sm font-medium text-[color:var(--muted)]">Savings (NPR)</label>
+        <label className="text-sm font-medium text-[color:var(--muted)]">
+          {language === "ne" ? "बचत (रु)" : "Savings (NPR)"}
+        </label>
         <input
           type="number"
           min={100000}
@@ -77,7 +88,13 @@ export default function FinancialViabilityPanel({
         />
       </div>
 
-      {loading ? <p className="mt-5 text-sm text-[color:var(--muted)]">Estimating startup cost, break-even, and risk...</p> : null}
+      {loading ? (
+        <p className="mt-5 text-sm text-[color:var(--muted)]">
+          {language === "ne"
+            ? "सुरुआती लागत, ब्रेक-इभन र जोखिमको अनुमान गर्दैछौं..."
+            : "Estimating startup cost, break-even, and risk..."}
+        </p>
+      ) : null}
       {error ? <p className="mt-5 text-sm text-[color:var(--accent)]">{error}</p> : null}
 
       <div className="mt-6 grid gap-5 lg:grid-cols-3">
@@ -105,42 +122,56 @@ export default function FinancialViabilityPanel({
                         : "#dc143c",
                 }}
               >
-                {option.risk_level} risk
+                {language === "ne"
+                  ? option.risk_level === "low"
+                    ? "कम जोखिम"
+                    : option.risk_level === "moderate"
+                      ? "मध्यम जोखिम"
+                      : "उच्च जोखिम"
+                  : `${option.risk_level} risk`}
               </span>
             </div>
 
             <div className="mt-5 grid gap-3">
               <div className="flex items-center gap-3 text-sm text-[color:var(--muted)]">
                 <Banknote size={16} className="text-[color:var(--accent)]" />
-                Total estimated cost: NPR {option.total_estimated_cost_npr.toLocaleString()}
+                {language === "ne"
+                  ? `कुल अनुमानित लागत: रु ${option.total_estimated_cost_npr.toLocaleString()}`
+                  : `Total estimated cost: NPR ${option.total_estimated_cost_npr.toLocaleString()}`}
               </div>
               <div className="flex items-center gap-3 text-sm text-[color:var(--muted)]">
                 <Clock3 size={16} className="text-[color:var(--terracotta)]" />
-                Break-even estimate: {option.break_even_months} months
+                {language === "ne"
+                  ? `ब्रेक-इभन अनुमान: ${option.break_even_months} महिना`
+                  : `Break-even estimate: ${option.break_even_months} months`}
               </div>
               <div className="flex items-center gap-3 text-sm text-[color:var(--muted)]">
                 <AlertTriangle size={16} className="text-[color:var(--sage)]" />
-                Savings gap: NPR {option.savings_gap_npr.toLocaleString()}
+                {language === "ne"
+                  ? `बचत अन्तर: रु ${option.savings_gap_npr.toLocaleString()}`
+                  : `Savings gap: NPR ${option.savings_gap_npr.toLocaleString()}`}
               </div>
             </div>
 
             <div className="mt-5 space-y-2 text-sm leading-7 text-[color:var(--muted)]">
-              <p>Revenue range: {option.monthly_revenue_range_npr}</p>
-              <p>Cost range: {option.monthly_cost_range_npr}</p>
+              <p>{language === "ne" ? "आम्दानी दायरा" : "Revenue range"}: {option.monthly_revenue_range_npr}</p>
+              <p>{language === "ne" ? "खर्च दायरा" : "Cost range"}: {option.monthly_cost_range_npr}</p>
             </div>
 
             {option.ai_note ? (
               <div className="mt-5 rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface-highlight)] p-4 text-sm leading-7 text-[color:var(--text)]">
                 <p className="mb-2 inline-flex items-center gap-2 font-semibold">
                   <Sparkles size={14} className="text-[color:var(--accent)]" />
-                  Quick take
+                  {language === "ne" ? "छोटो मूल्यांकन" : "Quick take"}
                 </p>
                 <p>{option.ai_note}</p>
               </div>
             ) : null}
 
             <div className="mt-5">
-              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">First steps</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">
+                {language === "ne" ? "पहिलो कदम" : "First steps"}
+              </p>
               <ul className="mt-3 space-y-2 text-sm leading-7 text-[color:var(--muted)]">
                 {option.suggested_first_steps.map((step) => (
                   <li key={step}>• {step}</li>

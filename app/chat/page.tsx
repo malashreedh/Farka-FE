@@ -26,7 +26,7 @@ import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
 import type { ChatMessage, Language, TradeCategoryEnum, WorkflowStage } from "@/lib/types";
 import { SKILL_TAGS } from "@/lib/types";
-import { BUSINESS_IDEA_SUGGESTIONS, DISTRICT_ACTIONS, DOMAIN_OPTIONS, PATH_ACTIONS, SAVINGS_ACTIONS } from "@/lib/workflows";
+import { BUSINESS_IDEA_SUGGESTIONS, DISTRICT_ACTIONS, PATH_ACTIONS, SAVINGS_ACTIONS } from "@/lib/workflows";
 
 const STAGE_LABELS: Record<WorkflowStage, string> = {
   initial: "Arrival",
@@ -139,6 +139,7 @@ export default function ChatPage() {
   const [waveformLevels, setWaveformLevels] = useState<number[]>([]);
   const [playingAudio, setPlayingAudio] = useState(false);
   const [businessDistrict, setBusinessDistrict] = useState("");
+  const [customBusinessDistrict, setCustomBusinessDistrict] = useState("");
   const [businessSavings, setBusinessSavings] = useState("");
   const [businessIdea, setBusinessIdea] = useState("");
 
@@ -200,6 +201,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (stage !== "collecting_business_details") {
       setBusinessDistrict("");
+      setCustomBusinessDistrict("");
       setBusinessSavings("");
       setBusinessIdea("");
     }
@@ -208,13 +210,6 @@ export default function ChatPage() {
   const lastAssistantMessage = getLastAssistantMessage(messages).toLowerCase();
   const inferredTrade = inferTrade(messages);
   const visibleSkills = SKILL_TAGS[inferredTrade] ?? [];
-
-  const shouldShowDomainOptions =
-    stage === "collecting_basics" &&
-    (lastAssistantMessage.includes("type of work") ||
-      lastAssistantMessage.includes("work did you do") ||
-      lastAssistantMessage.includes("कस्तो काम") ||
-      lastAssistantMessage.includes("काम"));
 
   const shouldShowPathActions =
     stage === "path_decision" &&
@@ -232,9 +227,10 @@ export default function ChatPage() {
     (lastAssistantMessage.includes("savings") || lastAssistantMessage.includes("बचत"));
   const shouldShowBusinessPlanner = shouldShowBusinessDistricts || shouldShowBusinessSavings;
   const businessIdeaSuggestions = BUSINESS_IDEA_SUGGESTIONS[inferredTrade] ?? BUSINESS_IDEA_SUGGESTIONS.other;
+  const selectedBusinessDistrict = customBusinessDistrict.trim() || businessDistrict.trim();
   const canSubmitBusinessPlanner =
     stage === "collecting_business_details" &&
-    businessDistrict.trim().length > 0 &&
+    selectedBusinessDistrict.length > 0 &&
     businessSavings.trim().length > 0 &&
     businessIdea.trim().length > 2;
 
@@ -326,8 +322,8 @@ export default function ChatPage() {
 
     const content =
       language === "ne"
-        ? `जिल्ला ${businessDistrict}, बचत ${businessSavings}, र म ${businessIdea} सुरु गर्न चाहन्छु।`
-        : `Target district ${businessDistrict}, savings range ${businessSavings}, and I want to start ${businessIdea}.`;
+        ? `जिल्ला ${selectedBusinessDistrict}, बचत ${businessSavings}, र म ${businessIdea} सुरु गर्न चाहन्छु।`
+        : `Target district ${selectedBusinessDistrict}, savings range ${businessSavings}, and I want to start ${businessIdea}.`;
 
     await submitMessage(content);
   }
@@ -498,23 +494,6 @@ export default function ChatPage() {
 
               {sending ? <TypingIndicator language={language} /> : null}
 
-              {shouldShowDomainOptions ? (
-                <QuickActions
-                  title={language === "ne" ? "सामान्य कार्य क्षेत्र छान्नुस्" : "Choose a common work domain"}
-                  subtitle={
-                    language === "ne"
-                      ? "तपाईंको मुख्य कामसँग मिल्ने क्षेत्र रोज्न सक्नुहुन्छ।"
-                      : "Pick the closest work domain if typing it out feels slower."
-                  }
-                  actions={DOMAIN_OPTIONS.map((option) => ({
-                    label: language === "ne" ? option.titleNe : option.titleEn,
-                    description: language === "ne" ? option.introNe : option.introEn,
-                    value: language === "ne" ? option.samplePromptNe : option.samplePromptEn,
-                  }))}
-                  onSelect={(value) => submitMessage(value)}
-                />
-              ) : null}
-
               {stage === "collecting_skills" ? (
                 <section className="fade-in-up rounded-[28px] border border-white/8 bg-[color:var(--surface)] p-4 shadow-soft">
                   <div className="mb-4 flex items-start justify-between gap-3">
@@ -596,9 +575,12 @@ export default function ChatPage() {
                           <button
                             key={district}
                             type="button"
-                            onClick={() => setBusinessDistrict(district)}
+                            onClick={() => {
+                              setBusinessDistrict(district);
+                              setCustomBusinessDistrict("");
+                            }}
                             className={`rounded-[22px] border px-4 py-4 text-left text-sm font-semibold transition ${
-                              businessDistrict === district
+                              businessDistrict === district && !customBusinessDistrict
                                 ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                                 : "border-white/8 bg-[color:var(--surface-strong)] text-[color:var(--text)] hover:border-[color:var(--line-strong)] hover:bg-[color:var(--surface-highlight)]"
                             }`}
@@ -606,6 +588,19 @@ export default function ChatPage() {
                             {district}
                           </button>
                         ))}
+                      </div>
+                      <div className="mt-3 rounded-[22px] border border-white/10 bg-[color:var(--surface-strong)] px-4 py-3">
+                        <input
+                          value={customBusinessDistrict}
+                          onChange={(event) => {
+                            setCustomBusinessDistrict(event.target.value);
+                            if (event.target.value.trim()) {
+                              setBusinessDistrict("");
+                            }
+                          }}
+                          placeholder={language === "ne" ? "आफ्नो जिल्ला लेख्नुहोस्" : "Type another district"}
+                          className="w-full bg-transparent text-sm text-[color:var(--text)] outline-none placeholder:text-[color:var(--muted)]"
+                        />
                       </div>
                     </div>
 
