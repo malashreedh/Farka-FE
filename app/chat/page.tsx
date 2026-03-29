@@ -26,7 +26,7 @@ import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
 import type { ChatMessage, Language, TradeCategoryEnum, WorkflowStage } from "@/lib/types";
 import { SKILL_TAGS } from "@/lib/types";
-import { DISTRICT_ACTIONS, DOMAIN_OPTIONS, PATH_ACTIONS, SAVINGS_ACTIONS } from "@/lib/workflows";
+import { BUSINESS_IDEA_SUGGESTIONS, DISTRICT_ACTIONS, DOMAIN_OPTIONS, PATH_ACTIONS, SAVINGS_ACTIONS } from "@/lib/workflows";
 
 const STAGE_LABELS: Record<WorkflowStage, string> = {
   initial: "Arrival",
@@ -138,6 +138,9 @@ export default function ChatPage() {
   const [recording, setRecording] = useState(false);
   const [waveformLevels, setWaveformLevels] = useState<number[]>([]);
   const [playingAudio, setPlayingAudio] = useState(false);
+  const [businessDistrict, setBusinessDistrict] = useState("");
+  const [businessSavings, setBusinessSavings] = useState("");
+  const [businessIdea, setBusinessIdea] = useState("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -194,6 +197,14 @@ export default function ChatPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (stage !== "collecting_business_details") {
+      setBusinessDistrict("");
+      setBusinessSavings("");
+      setBusinessIdea("");
+    }
+  }, [stage]);
+
   const lastAssistantMessage = getLastAssistantMessage(messages).toLowerCase();
   const inferredTrade = inferTrade(messages);
   const visibleSkills = SKILL_TAGS[inferredTrade] ?? [];
@@ -219,6 +230,13 @@ export default function ChatPage() {
   const shouldShowBusinessSavings =
     stage === "collecting_business_details" &&
     (lastAssistantMessage.includes("savings") || lastAssistantMessage.includes("बचत"));
+  const shouldShowBusinessPlanner = shouldShowBusinessDistricts || shouldShowBusinessSavings;
+  const businessIdeaSuggestions = BUSINESS_IDEA_SUGGESTIONS[inferredTrade] ?? BUSINESS_IDEA_SUGGESTIONS.other;
+  const canSubmitBusinessPlanner =
+    stage === "collecting_business_details" &&
+    businessDistrict.trim().length > 0 &&
+    businessSavings.trim().length > 0 &&
+    businessIdea.trim().length > 2;
 
   async function submitMessage(overrideMessage?: string) {
     const content = (overrideMessage ?? input).trim();
@@ -299,6 +317,19 @@ export default function ChatPage() {
       return;
     }
     await submitMessage(selectedSkills.join(", "));
+  }
+
+  async function submitBusinessPlanner() {
+    if (!canSubmitBusinessPlanner) {
+      return;
+    }
+
+    const content =
+      language === "ne"
+        ? `जिल्ला ${businessDistrict}, बचत ${businessSavings}, र म ${businessIdea} सुरु गर्न चाहन्छु।`
+        : `Target district ${businessDistrict}, savings range ${businessSavings}, and I want to start ${businessIdea}.`;
+
+    await submitMessage(content);
   }
 
   function startVisualizer(stream: MediaStream) {
@@ -542,38 +573,105 @@ export default function ChatPage() {
                 />
               ) : null}
 
-              {shouldShowBusinessDistricts ? (
-                <QuickActions
-                  title={language === "ne" ? "लक्षित जिल्ला" : "Target district"}
-                  subtitle={
-                    language === "ne"
-                      ? "नेपाल फर्किएपछि काम वा व्यवसाय सुरु गर्न चाहेको जिल्ला छान्नुस्।"
-                      : "Choose the district you want to return to first."
-                  }
-                  actions={(language === "ne" ? DISTRICT_ACTIONS.ne : DISTRICT_ACTIONS.en).map((district) => ({
-                    label: district,
-                    value: district,
-                  }))}
-                  onSelect={(value) => submitMessage(value)}
-                  compact
-                />
-              ) : null}
+              {shouldShowBusinessPlanner ? (
+                <section className="fade-in-up rounded-[28px] border border-white/8 bg-[color:var(--surface)] p-4 shadow-soft">
+                  <div className="mb-4">
+                    <p className="text-sm font-semibold tracking-[0.08em] text-[color:var(--text)]">
+                      {language === "ne" ? "व्यवसाय योजना विवरण" : "Business plan details"}
+                    </p>
+                    <p className="mt-1 text-sm text-[color:var(--muted)]">
+                      {language === "ne"
+                        ? "जिल्ला, बचत, र सुरु गर्न चाहेको व्यवसाय छानिसकेपछि मात्र अगाडि बढ्छ।"
+                        : "We only continue once district, savings, and the business idea are all clear."}
+                    </p>
+                  </div>
 
-              {shouldShowBusinessSavings ? (
-                <QuickActions
-                  title={language === "ne" ? "बचतको दायरा" : "Savings band"}
-                  subtitle={
-                    language === "ne"
-                      ? "आफ्नो उपलब्ध बचतको नजिकको दायरा छान्नुस्।"
-                      : "Choose the closest savings range so the checklist stays realistic."
-                  }
-                  actions={(language === "ne" ? SAVINGS_ACTIONS.ne : SAVINGS_ACTIONS.en).map((band) => ({
-                    label: band,
-                    value: band,
-                  }))}
-                  onSelect={(value) => submitMessage(value)}
-                  compact
-                />
+                  <div className="space-y-5">
+                    <div>
+                      <p className="mb-2 text-sm font-medium text-[color:var(--text)]">
+                        {language === "ne" ? "लक्षित जिल्ला" : "Target district"}
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {(language === "ne" ? DISTRICT_ACTIONS.ne : DISTRICT_ACTIONS.en).map((district) => (
+                          <button
+                            key={district}
+                            type="button"
+                            onClick={() => setBusinessDistrict(district)}
+                            className={`rounded-[22px] border px-4 py-4 text-left text-sm font-semibold transition ${
+                              businessDistrict === district
+                                ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                                : "border-white/8 bg-[color:var(--surface-strong)] text-[color:var(--text)] hover:border-[color:var(--line-strong)] hover:bg-[color:var(--surface-highlight)]"
+                            }`}
+                          >
+                            {district}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-sm font-medium text-[color:var(--text)]">
+                        {language === "ne" ? "बचतको दायरा" : "Savings band"}
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {(language === "ne" ? SAVINGS_ACTIONS.ne : SAVINGS_ACTIONS.en).map((band) => (
+                          <button
+                            key={band}
+                            type="button"
+                            onClick={() => setBusinessSavings(band)}
+                            className={`rounded-[22px] border px-4 py-4 text-left text-sm font-semibold transition ${
+                              businessSavings === band
+                                ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                                : "border-white/8 bg-[color:var(--surface-strong)] text-[color:var(--text)] hover:border-[color:var(--line-strong)] hover:bg-[color:var(--surface-highlight)]"
+                            }`}
+                          >
+                            {band}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-sm font-medium text-[color:var(--text)]">
+                        {language === "ne" ? "व्यवसायको विचार" : "Business idea"}
+                      </p>
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {businessIdeaSuggestions.map((idea) => (
+                          <button
+                            key={idea}
+                            type="button"
+                            onClick={() => setBusinessIdea(idea)}
+                            className={`rounded-full border px-4 py-2 text-sm transition ${
+                              businessIdea === idea
+                                ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                                : "border-[color:var(--line)] bg-[color:var(--surface-strong)] text-[color:var(--muted)] hover:border-[color:var(--line-strong)]"
+                            }`}
+                          >
+                            {idea}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="rounded-[22px] border border-white/10 bg-[color:var(--surface-strong)] px-4 py-3">
+                        <input
+                          value={businessIdea}
+                          onChange={(event) => setBusinessIdea(event.target.value)}
+                          placeholder={language === "ne" ? "उदाहरण: चिया तथा खाजा पसल" : "Example: tea and snacks shop"}
+                          className="w-full bg-transparent text-sm text-[color:var(--text)] outline-none placeholder:text-[color:var(--muted)]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={submitBusinessPlanner}
+                    disabled={!canSubmitBusinessPlanner || sending}
+                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-[color:var(--ink-strong)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ArrowRight size={16} />
+                    {language === "ne" ? "योजना बनाऊँ" : "Build my roadmap"}
+                  </button>
+                </section>
               ) : null}
 
               <div ref={messagesEndRef} />

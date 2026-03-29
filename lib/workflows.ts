@@ -79,3 +79,46 @@ export const SAVINGS_ACTIONS = {
   en: ["Under 5 lakh", "5 to 20 lakh", "20 to 50 lakh", "Above 50 lakh"],
   ne: ["५ लाखभन्दा कम", "५ देखि २० लाख", "२० देखि ५० लाख", "५० लाखभन्दा माथि"],
 };
+
+export const BUSINESS_IDEA_SUGGESTIONS = {
+  construction: [
+    "Interior finishing service",
+    "Small renovation crew",
+    "Hardware and repair shop",
+  ],
+  hospitality: [
+    "Tea and breakfast counter",
+    "Small cafe",
+    "Packed meal or catering service",
+  ],
+  manufacturing: [
+    "Packaging unit",
+    "Metal fabrication workshop",
+    "Tailoring and finishing unit",
+  ],
+  agriculture: [
+    "Vegetable tunnel farm",
+    "Goat or poultry farm",
+    "Agro-input shop",
+  ],
+  domestic: [
+    "Home cleaning service",
+    "Childcare center",
+    "Tiffin or meal prep service",
+  ],
+  transport: [
+    "Delivery service",
+    "Transport booking desk",
+    "Cargo handling service",
+  ],
+  tech: [
+    "Digital service studio",
+    "Computer and printer support",
+    "Social media service",
+  ],
+  other: [
+    "Neighborhood retail shop",
+    "Service-based small business",
+    "Home-based startup",
+  ],
+} as const;
