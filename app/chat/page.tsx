@@ -8,16 +8,20 @@ import {
   Clock3,
   HeartHandshake,
   Languages,
+  Mic,
   Send,
   Sparkles,
+  Square,
   Wrench,
 } from "lucide-react";
 
 import ChatBubble from "@/components/ChatBubble";
+import ProfileProgressCard from "@/components/ProfileProgressCard";
 import { useLanguage } from "@/components/LanguageProvider";
 import LoadingState from "@/components/LoadingState";
 import QuickActions from "@/components/QuickActions";
 import SkillTag from "@/components/SkillTag";
+import VoiceWaveform from "@/components/VoiceWaveform";
 import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
 import type { ChatMessage, Language, TradeCategoryEnum, WorkflowStage } from "@/lib/types";
@@ -131,6 +135,16 @@ export default function ChatPage() {
   const [redirectMessage, setRedirectMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [waveformLevels, setWaveformLevels] = useState<number[]>([]);
+  const [playingAudio, setPlayingAudio] = useState(false);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -169,6 +183,16 @@ export default function ChatPage() {
   useEffect(() => {
     sessionStorage.setItem("farka_lang", language);
   }, [language]);
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      void audioContextRef.current?.close().catch(() => undefined);
+    };
+  }, []);
 
   const lastAssistantMessage = getLastAssistantMessage(messages).toLowerCase();
   const inferredTrade = inferTrade(messages);
@@ -275,6 +299,134 @@ export default function ChatPage() {
       return;
     }
     await submitMessage(selectedSkills.join(", "));
+  }
+
+  function startVisualizer(stream: MediaStream) {
+    const audioContext = new window.AudioContext();
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 32;
+    source.connect(analyser);
+
+    audioContextRef.current = audioContext;
+    analyserRef.current = analyser;
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const update = () => {
+      analyser.getByteFrequencyData(dataArray);
+      setWaveformLevels(Array.from(dataArray.slice(0, 10)).map((value) => Math.max(0.16, value / 255)));
+      animationFrameRef.current = requestAnimationFrame(update);
+    };
+
+    update();
+  }
+
+  async function startRecording() {
+    if (!sessionId || sending || recording) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+      startVisualizer(stream);
+
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      recorder.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+        setRecording(false);
+        setSending(true);
+
+        try {
+          const response = await api.sendVoiceMessage(sessionId, blob);
+          const nextLanguage = detectLanguage(response.message);
+          setLanguage(nextLanguage);
+          setMessages((current) => [
+            ...current,
+            { role: "user", content: response.transcript, timestamp: new Date().toISOString() },
+            { role: "assistant", content: response.message, timestamp: new Date().toISOString() },
+          ]);
+          setStage(response.stage);
+
+          if (response.profile_id) {
+            setProfileId(response.profile_id);
+            sessionStorage.setItem("farka_profile_id", response.profile_id);
+          }
+
+          if (response.audio_b64) {
+            setPlayingAudio(true);
+            const interval = window.setInterval(() => {
+              setWaveformLevels(Array.from({ length: 10 }, (_, index) => 0.2 + Math.abs(Math.sin(Date.now() / 180 + index)) * 0.65));
+            }, 120);
+            const audio = new Audio(`data:${response.audio_mime_type || "audio/mpeg"};base64,${response.audio_b64}`);
+            audio.onended = () => {
+              window.clearInterval(interval);
+              setPlayingAudio(false);
+              setWaveformLevels([]);
+            };
+            audio.onerror = () => {
+              window.clearInterval(interval);
+              setPlayingAudio(false);
+              setWaveformLevels([]);
+            };
+            void audio.play().catch(() => {
+              window.clearInterval(interval);
+              setPlayingAudio(false);
+              setWaveformLevels([]);
+            });
+          } else {
+            setWaveformLevels([]);
+          }
+
+          if (response.redirect && response.profile_id) {
+            const overlayMessage =
+              response.redirect === "jobs"
+                ? getText("loading_jobs", nextLanguage)
+                : getText("loading_checklist", nextLanguage);
+            setRedirectMessage(overlayMessage);
+
+            window.setTimeout(() => {
+              if (response.redirect === "jobs") {
+                router.push(`/results/jobs?profile_id=${response.profile_id}`);
+              } else {
+                router.push(`/results/business?profile_id=${response.profile_id}`);
+              }
+            }, 1400);
+          }
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : "Voice message failed.";
+          setMessages((current) => [
+            ...current,
+            { role: "assistant", content: detail, timestamp: new Date().toISOString() },
+          ]);
+          setWaveformLevels([]);
+        } finally {
+          setSending(false);
+        }
+      };
+
+      recorder.start();
+      setRecording(true);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Microphone access failed.";
+      setMessages((current) => [
+        ...current,
+        { role: "assistant", content: detail, timestamp: new Date().toISOString() },
+      ]);
+    }
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop();
   }
 
   if (loading) {
@@ -428,6 +580,23 @@ export default function ChatPage() {
             </div>
 
             <footer className="border-t border-[color:var(--line)] bg-[rgba(255,252,247,0.88)] px-4 py-4 backdrop-blur md:px-6">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <VoiceWaveform active={recording} playing={playingAudio} levels={waveformLevels} />
+                <button
+                  type="button"
+                  onClick={recording ? stopRecording : startRecording}
+                  disabled={sending || !sessionId}
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    recording
+                      ? "bg-[color:var(--accent)] text-white"
+                      : "border border-[color:var(--line)] bg-[color:var(--surface)] text-[color:var(--accent)]"
+                  } disabled:cursor-not-allowed disabled:opacity-45`}
+                >
+                  {recording ? <Square size={14} /> : <Mic size={14} />}
+                  {recording ? "Stop recording" : "Use voice"}
+                </button>
+              </div>
+
               <div className="flex items-end gap-3">
                 <div className="flex-1 rounded-[28px] border border-white/10 bg-[color:var(--surface)] px-4 py-3 shadow-soft">
                   <input
@@ -458,6 +627,8 @@ export default function ChatPage() {
           </div>
 
           <aside className="space-y-4">
+            <ProfileProgressCard stage={stage} />
+
             <div className="panel-subtle rounded-[30px] p-5">
               <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">What to expect</p>
               <div className="mt-5 space-y-4">
@@ -507,6 +678,13 @@ export default function ChatPage() {
                   If you already know what you want, say it directly and FARKA will move faster.
                 </p>
               </div>
+            </div>
+
+            <div className="panel-subtle rounded-[30px] p-5">
+              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Voice reply</p>
+              <p className="mt-3 text-sm leading-7 text-[color:var(--muted)]">
+                Record in Nepali or English. Farka will transcribe your message and play the response back when audio is available.
+              </p>
             </div>
           </aside>
         </section>

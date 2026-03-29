@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -13,10 +14,13 @@ import {
 } from "lucide-react";
 
 import { useLanguage } from "@/components/LanguageProvider";
+import type { JobDensity } from "@/lib/types";
 import LoadingState from "@/components/LoadingState";
 import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
 import type { JobMatch } from "@/lib/types";
+
+const JobDensityMap = dynamic(() => import("@/components/JobDensityMap"), { ssr: false });
 
 function MatchBar({ value }: { value: number }) {
   return (
@@ -126,6 +130,7 @@ function ResultsContent() {
   const { language } = useLanguage();
 
   const [matches, setMatches] = useState<JobMatch[]>([]);
+  const [density, setDensity] = useState<JobDensity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -138,6 +143,8 @@ function ResultsContent() {
 
     const fetchMatches = async () => {
       try {
+        const densityRows = await api.getJobDensity();
+        setDensity(densityRows);
         const existing = await api.getJobMatches(profileId);
         if (existing.length > 0) {
           setMatches(existing);
@@ -224,6 +231,12 @@ function ResultsContent() {
           </div>
         </section>
       </div>
+
+      {density.length ? (
+        <div className="mt-8">
+          <JobDensityMap density={density} initialTrade={matches[0]?.job.trade_category ?? "construction"} />
+        </div>
+      ) : null}
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         {matches.map((match) => (
