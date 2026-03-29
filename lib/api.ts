@@ -4,41 +4,39 @@
 // BASE_URL points to the deployed Render backend.
 
 import type {
-    StartChatResponse,
-    SendMessageResponse,
-    Profile,
-    JobMatch,
-    BusinessChecklist,
-    ApiResponse,
-  } from "@/lib/types";
-  
-  const BASE_URL = "https://farka-be.onrender.com/api/v1";
-  
-  // Shared fetch helper — unwraps {"data": ..., "message": "..."} automatically.
-  async function apiFetch<T>(
-    path: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const res = await fetch(`${BASE_URL}${path}`, {
-      headers: { "Content-Type": "application/json", ...options.headers },
-      ...options,
-    });
-  
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: "Unknown error" }));
-      throw new Error(err.detail ?? `HTTP ${res.status}`);
-    }
-  
-    // Some endpoints (chat/start, chat/message) return the payload directly
-    // without the {"data":...} wrapper — handle both shapes safely.
-    const json = await res.json();
-  
-    // If the backend wrapped it, unwrap. Otherwise return as-is.
-    if (json && typeof json === "object" && "data" in json) {
-      return (json as ApiResponse<T>).data;
-    }
-    return json as T;
+  ApiResponse,
+  BusinessChecklist,
+  JobMatch,
+  Profile,
+  SendMessageResponse,
+  StartChatResponse,
+} from "@/lib/types";
+
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
+  "http://localhost:8000/api/v1";
+
+async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({ detail: "Unknown error" }));
+    throw new Error(errorBody.detail ?? `HTTP ${response.status}`);
   }
+
+  const json = await response.json();
+  if (json && typeof json === "object" && "data" in json) {
+    return (json as ApiResponse<T>).data;
+  }
+  return json as T;
+}
   
   // ─── CHAT ─────────────────────────────────────────────────────────────────────
   

@@ -1,401 +1,233 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  Compass,
+  HandHelping,
+  Landmark,
+  MessageSquareHeart,
+  MountainSnow,
+  Sparkles,
+  Store,
+} from "lucide-react";
+
+import { useLanguage } from "@/components/LanguageProvider";
 import { getText } from "@/lib/language";
-import type { Language } from "@/lib/types";
 
-// ─── Stat ─────────────────────────────────────────────────────────────────────
-function AnimatedStat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <span className="text-3xl font-bold" style={{ color: "var(--teal)", fontFamily: "'DM Sans', sans-serif" }}>
-        {value}
-      </span>
-      <span className="text-xs tracking-widest uppercase opacity-50 text-white">
-        {label}
-      </span>
-    </div>
-  );
-}
+const featureCards = [
+  {
+    icon: MessageSquareHeart,
+    eyebrow: "Conversation first",
+    title: "A return-planning assistant that listens before it recommends.",
+    description:
+      "FARKA turns lived work experience abroad into a practical next step back in Nepal, without forcing people through stiff forms.",
+  },
+  {
+    icon: BriefcaseBusiness,
+    eyebrow: "Jobs path",
+    title: "Surface grounded opportunities that reflect real skills and districts.",
+    description:
+      "We match profiles to roles that feel believable for returning workers, not generic listings that ignore actual trade background.",
+  },
+  {
+    icon: Store,
+    eyebrow: "Business path",
+    title: "Translate savings and experience into a launch plan that makes sense.",
+    description:
+      "The business roadmap is tuned for Nepal, so the plan feels like a local starting point instead of a generic startup checklist.",
+  },
+];
 
-// ─── Feature Card ─────────────────────────────────────────────────────────────
-function FeatureCard({
-  icon,
-  title,
-  description,
-  delay,
-  accent,
-}: {
-  icon: string;
-  title: string;
-  description: string;
-  delay: string;
-  accent: string;
-}) {
-  return (
-    <div
-      className="group relative rounded-2xl p-8 flex flex-col gap-4 overflow-hidden hero-reveal"
-      style={{
-        animationDelay: delay,
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      {/* Hover glow */}
-      <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: `radial-gradient(ellipse at top left, ${accent}20 0%, transparent 65%)` }}
-      />
-      {/* Top accent bar */}
-      <div
-        className="absolute top-0 left-8 h-0.5 w-12 rounded-full group-hover:w-24 transition-all duration-500"
-        style={{ background: accent }}
-      />
-      <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
-        style={{ background: `${accent}22` }}
-      >
-        {icon}
-      </div>
-      <h3 className="text-xl font-bold text-white leading-tight">{title}</h3>
-      <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
-        {description}
-      </p>
-      <span
-        className="mt-auto text-sm font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 translate-x-0 group-hover:translate-x-1 transition-all duration-300"
-        style={{ color: accent }}
-      >
-        Learn more →
-      </span>
-    </div>
-  );
-}
+const trustStats = [
+  { value: "2", label: "clear next-step options" },
+  { value: "1", label: "simple guided conversation" },
+  { value: "0", label: "forms to fill first" },
+];
 
-// ─── Mountain SVG — fixed at bottom ──────────────────────────────────────────
-function MountainSilhouette() {
-  return (
-    <div
-      className="fixed bottom-0 left-0 w-full pointer-events-none z-10"
-      aria-hidden="true"
-    >
-      <svg
-        viewBox="0 0 1440 320"
-        preserveAspectRatio="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-full block"
-        style={{ height: "clamp(140px, 22vw, 280px)" }}
-      >
-        <defs>
-          <radialGradient id="snowGlow" cx="50%" cy="0%" r="60%">
-            <stop offset="0%" stopColor="#e0f2fe" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id="mountainGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#111e35" />
-            <stop offset="100%" stopColor="#0a1628" />
-          </linearGradient>
-          <linearGradient id="ridgeGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0d2040" />
-            <stop offset="100%" stopColor="#0a1628" />
-          </linearGradient>
-        </defs>
-        {/* Far ridge */}
-        <path
-          d="M0,260 L80,200 L180,230 L300,160 L420,195 L540,145 L660,180 L760,130 L860,165 L960,120 L1060,155 L1160,125 L1280,170 L1440,200 L1440,320 L0,320 Z"
-          fill="url(#ridgeGrad)"
-          opacity="0.6"
-        />
-        {/* Main massif */}
-        <path
-          d="M0,320 L0,295 L120,270 L220,250 L300,230 L380,210 L450,195 L520,175 L590,155 L640,130 L680,105 L720,75 L760,100 L800,120 L850,145 L910,165 L970,185 L1040,195 L1120,210 L1200,230 L1280,250 L1360,268 L1440,280 L1440,320 Z"
-          fill="url(#mountainGrad)"
-        />
-        {/* Snow cap */}
-        <path
-          d="M700,118 L720,75 L740,118 Q720,108 700,118 Z"
-          fill="rgba(255,255,255,0.15)"
-        />
-        <ellipse cx="720" cy="100" rx="80" ry="40" fill="url(#snowGlow)" />
-        {/* Teal mist */}
-        <path
-          d="M0,312 Q360,298 720,308 Q1080,318 1440,310 L1440,320 L0,320 Z"
-          fill="rgba(26,158,126,0.07)"
-        />
-      </svg>
-    </div>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
-  const lang: Language = "en";
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const cards = [
-    {
-      icon: "🗣️",
-      title: getText("share_story_title", lang),
-      description: getText("share_story_desc", lang),
-      delay: "0.1s",
-      accent: "var(--teal)",
-    },
-    {
-      icon: "💼",
-      title: getText("find_jobs_title", lang),
-      description: getText("find_jobs_desc", lang),
-      delay: "0.2s",
-      accent: "var(--amber)",
-    },
-    {
-      icon: "🏗️",
-      title: getText("build_something_title", lang),
-      description: getText("build_something_desc", lang),
-      delay: "0.3s",
-      accent: "#60a5fa",
-    },
-  ];
+  const { language } = useLanguage();
 
   return (
-    <div className="min-h-screen text-white" style={{ background: "var(--navy)" }}>
-      {/* ── Sticky Nav ── */}
-      <header
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 transition-all duration-300"
-        style={{
-          background: scrolled ? "rgba(10,22,40,0.9)" : "transparent",
-          backdropFilter: scrolled ? "blur(16px)" : "none",
-          borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
-        }}
-      >
-        <span
-          className="font-bold text-xl tracking-tight"
-          style={{ color: "var(--teal)", fontFamily: "'DM Sans', sans-serif" }}
-        >
-          FARKA फर्क
-        </span>
+    <main className="page-shell">
+      <section className="mx-auto max-w-7xl px-4 pb-16 pt-8 md:px-8 md:pb-24">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-14">
+          <div className="fade-in-up">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line-strong)] bg-[color:var(--accent-soft)] px-4 py-2 text-xs uppercase tracking-[0.24em] text-[color:var(--accent)]">
+              <Sparkles size={14} />
+              Nepal-first return planning
+            </div>
 
-        <Link
-          href="/chat"
-          className="text-sm font-semibold px-5 py-2 rounded-full transition-all duration-200"
-          style={{
-            background: "rgba(26,158,126,0.12)",
-            color: "var(--teal)",
-            border: "1px solid rgba(26,158,126,0.25)",
-          }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(26,158,126,0.25)")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(26,158,126,0.12)")}
-        >
-          {getText("start_chat", lang)}
-        </Link>
-      </header>
+            <h1 className="mt-6 max-w-4xl text-[clamp(3.2rem,7vw,6.6rem)] font-semibold leading-[0.95] tracking-[-0.06em] text-[color:var(--text)]">
+              {getText("landing_hero", language)}
+            </h1>
 
-      {/* ── Hero ── */}
-      <section
-        className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 mesh-bg overflow-hidden"
-        style={{ paddingBottom: "clamp(160px, 24vw, 300px)" }}
-      >
-        {/* Background glow orbs */}
-        <div
-          className="absolute top-0 left-0 w-96 h-96 rounded-full pointer-events-none"
-          style={{
-            background: "radial-gradient(circle, rgba(26,158,126,0.15) 0%, transparent 70%)",
-            filter: "blur(60px)",
-            transform: "translate(-30%, -30%)",
-          }}
-          aria-hidden
-        />
-        <div
-          className="absolute bottom-40 right-0 w-80 h-80 rounded-full pointer-events-none"
-          style={{
-            background: "radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 70%)",
-            filter: "blur(60px)",
-            transform: "translate(30%, 30%)",
-          }}
-          aria-hidden
-        />
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-[color:var(--muted)] md:text-xl">
+              FARKA helps Nepali workers abroad understand what is realistically possible back in Nepal, then guides them toward either a job opportunity or a small-business plan.
+            </p>
 
-        <div className="relative z-20 max-w-4xl mx-auto flex flex-col items-center gap-6 hero-reveal">
-          {/* Badge */}
-          <div
-            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs tracking-widest uppercase"
-            style={{
-              background: "rgba(245,158,11,0.1)",
-              border: "1px solid rgba(245,158,11,0.25)",
-              color: "var(--amber)",
-            }}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ background: "var(--amber)" }}
-            />
-            Nepal–US Hackathon 2026
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+              <Link
+                href="/chat"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--accent)] px-6 py-4 text-sm font-semibold text-[color:var(--ink-strong)] transition hover:brightness-105"
+              >
+                Start the conversation
+                <ArrowRight size={16} />
+              </Link>
+              <a
+                href="#how-it-works"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-[color:var(--surface)] px-6 py-4 text-sm font-semibold text-[color:var(--text)] transition hover:border-[color:var(--line-strong)]"
+              >
+                How it works
+                <Compass size={16} />
+              </a>
+            </div>
+
+            <div className="mt-10 grid max-w-xl grid-cols-3 gap-4">
+              {trustStats.map((stat, index) => (
+                <div key={stat.label} className={`panel-subtle rounded-[24px] p-4 fade-in-up stagger-${index + 1}`}>
+                  <p className="text-2xl font-semibold tracking-[-0.03em] text-[color:var(--accent)]">{stat.value}</p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.2em] text-[color:var(--muted-strong)]">{stat.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Headline — spec: 64px+ Inter bold */}
-          <h1
-            className="font-bold text-white leading-tight tracking-tight"
-            style={{
-              fontSize: "clamp(2.4rem, 6vw, 4.5rem)",
-              fontFamily: "'DM Sans', sans-serif",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {/* Uses the correct spec key: landing_hero */}
-            {getText("landing_hero", lang)
-              .split("Nepal?")
-              .map((part, i) =>
-                i === 0 ? (
-                  <span key={i}>{part}</span>
-                ) : (
-                  <span key={i}>
-                    <span style={{ color: "var(--teal)" }}>Nepal?</span>
-                    {part}
-                  </span>
-                )
-              )}
-          </h1>
+          <div className="fade-in-up stagger-2">
+            <div className="panel-raised relative overflow-hidden rounded-[36px] p-6 md:p-8">
+              <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,rgba(232,178,87,0.18),transparent_70%)]" />
 
-          {/* Subtext — spec: DM Sans 20px muted */}
-          <p
-            className="max-w-xl leading-relaxed"
-            style={{
-              fontSize: "clamp(1rem, 2vw, 1.2rem)",
-              color: "rgba(255,255,255,0.52)",
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
-            {getText("landing_sub", lang)}
-          </p>
+              <div className="relative">
+                <div className="mb-6 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">A calmer way to begin</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">Start with your story, not a long form.</h2>
+                  </div>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--terracotta)]">
+                    <MountainSnow size={24} />
+                  </div>
+                </div>
 
-          {/* CTA — spec: teal, large, rounded, → /chat */}
-          <Link
-            href="/chat"
-            className="mt-2 inline-flex items-center gap-2 font-bold rounded-full px-10 py-4 text-white transition-all duration-300 hover:scale-105 active:scale-95"
-            style={{
-              background: "linear-gradient(135deg, var(--teal), #14856a)",
-              fontSize: "1.05rem",
-              boxShadow: "0 0 40px rgba(26,158,126,0.3), 0 4px 20px rgba(0,0,0,0.3)",
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
-            {getText("start_chat", lang)} →
-          </Link>
+                <div className="space-y-4">
+                  <div className="rounded-[28px] border border-white/8 bg-[color:var(--surface)] p-5">
+                    <p className="text-sm leading-7 text-[color:var(--text)]">
+                      “I&apos;m in Qatar. I worked in hotel operations for 5 years and now I&apos;m thinking about returning to Pokhara.”
+                    </p>
+                  </div>
+                  <div className="rounded-[28px] rounded-tl-md border border-[color:var(--line-strong)] bg-[color:var(--accent-soft)] p-5">
+                    <p className="text-sm leading-7 text-[color:var(--text)]">
+                      FARKA keeps the conversation simple, understands the important details, and moves you toward the most useful next step.
+                    </p>
+                  </div>
+                </div>
 
-          {/* Stats */}
-          <div
-            className="mt-8 pt-8 flex items-center gap-8 md:gap-16 flex-wrap justify-center"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
-          >
-            <AnimatedStat value="50k+" label="Workers Helped" />
-            <div className="w-px h-8 bg-white opacity-10 hidden sm:block" />
-            <AnimatedStat value="1,200+" label="Verified Jobs" />
-            <div className="w-px h-8 bg-white opacity-10 hidden sm:block" />
-            <AnimatedStat value="30+" label="Districts" />
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                  <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
+                    <div className="flex items-center gap-3">
+                      <Landmark size={18} className="text-[color:var(--terracotta)]" />
+                      <p className="text-sm font-semibold text-[color:var(--text)]">Made for Nepal</p>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">Recommendations are framed around returning home, not generic global advice.</p>
+                  </div>
+                  <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
+                    <div className="flex items-center gap-3">
+                      <HandHelping size={18} className="text-[color:var(--accent)]" />
+                      <p className="text-sm font-semibold text-[color:var(--text)]">Helpful, not overwhelming</p>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">You can type naturally, and the app only steps in when a choice becomes easier with guidance.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="hero-mountain mt-8 h-24 w-full bg-[linear-gradient(180deg,rgba(220,20,60,0.34),rgba(240,246,255,0.95))]" />
+            </div>
           </div>
         </div>
-
-        <MountainSilhouette />
       </section>
 
-      {/* ── Feature Cards — spec: 3 cards below fold ── */}
-      <section
-        id="features"
-        className="relative z-20 py-24 px-6"
-        style={{ background: "#0b1a2e" }}
-      >
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-px w-12" style={{ background: "var(--teal)" }} />
-            <span
-              className="text-xs tracking-widest uppercase"
-              style={{ color: "var(--teal)" }}
+      <section id="how-it-works" className="mx-auto max-w-7xl px-4 py-8 md:px-8 md:py-16">
+        <div className="mb-8 max-w-2xl">
+          <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">How it works</p>
+          <h2 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">
+            One conversation, then a clear next step.
+          </h2>
+          <p className="mt-4 text-lg leading-8 text-[color:var(--muted)]">
+            We keep the experience simple for the person using it: talk naturally, get understood, then see a path forward.
+          </p>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-3">
+          {featureCards.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <article key={feature.title} className={`panel-subtle rounded-[30px] p-6 fade-in-up stagger-${index + 1}`}>
+                <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--accent)]">
+                  <Icon size={22} />
+                </div>
+                <p className="mt-5 text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">{feature.eyebrow}</p>
+                <h3 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">{feature.title}</h3>
+                <p className="mt-4 text-base leading-8 text-[color:var(--muted)]">{feature.description}</p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="paths" className="mx-auto max-w-7xl px-4 py-8 md:px-8 md:py-16">
+        <div className="grid gap-5 md:grid-cols-2">
+          <article className="panel-subtle rounded-[32px] p-6">
+            <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--accent)]">
+              <BriefcaseBusiness size={22} />
+            </div>
+            <p className="mt-5 text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">For jobs</p>
+            <h3 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">See what roles could actually fit.</h3>
+            <p className="mt-4 text-base leading-8 text-[color:var(--muted)]">
+              Share where you are, what you did abroad, and how much experience you have. FARKA helps you move toward relevant roles in Nepal.
+            </p>
+          </article>
+
+          <article className="panel-subtle rounded-[32px] p-6">
+            <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--terracotta)]">
+              <Store size={22} />
+            </div>
+            <p className="mt-5 text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">For business</p>
+            <h3 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">Turn savings and experience into a plan.</h3>
+            <p className="mt-4 text-base leading-8 text-[color:var(--muted)]">
+              If returning home means starting something of your own, FARKA helps shape a realistic checklist based on your district and savings.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-20 pt-10 md:px-8">
+        <div className="panel-raised rounded-[36px] px-6 py-10 md:px-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Ready to begin?</p>
+              <h2 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">
+                Start with a simple conversation and see what could be waiting back home.
+              </h2>
+              <p className="mt-4 text-lg leading-8 text-[color:var(--muted)]">
+                The experience is designed to feel clear, calm, and human from the first message.
+              </p>
+            </div>
+
+            <Link
+              href="/chat"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--terracotta)] px-6 py-4 text-sm font-semibold text-white transition hover:brightness-110"
             >
-              How it works
-            </span>
-          </div>
-          <h2
-            className="font-bold text-white mb-12"
-            style={{
-              fontSize: "clamp(1.8rem, 4vw, 2.8rem)",
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
-            Three steps to coming home.
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {cards.map((card) => (
-              <FeatureCard key={card.title} {...card} />
-            ))}
+              Enter chat
+              <ArrowRight size={16} />
+            </Link>
           </div>
         </div>
-      </section>
 
-      {/* ── Testimonial ── */}
-      <section
-        className="relative z-20 py-20 px-6 text-center"
-        style={{ background: "var(--navy)" }}
-      >
-        <div className="max-w-2xl mx-auto">
-          <p
-            className="text-xl md:text-2xl font-semibold text-white leading-snug mb-6"
-            style={{ fontFamily: "'DM Sans', sans-serif" }}
-          >
-            &ldquo;I worked in Qatar for six years. FARKA helped me find a
-            construction supervisor role in Pokhara in three weeks. My children
-            finally know their father.&rdquo;
-          </p>
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
-            — Ramesh T., returned from Doha, 2024
-          </p>
-        </div>
+        <footer className="mt-8 flex flex-col gap-3 border-t border-white/8 pt-6 text-sm text-[color:var(--muted)] md:flex-row md:items-center md:justify-between">
+          <p>FARKA is a Nepal-first planning experience for workers returning home with skills, savings, and hard-earned experience.</p>
+          <p className="uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">Built for the Nepal-US Hackathon</p>
+        </footer>
       </section>
-
-      {/* ── Final CTA ── */}
-      <section
-        className="relative z-20 py-20 px-6 text-center"
-        style={{ background: "#0b1a2e" }}
-      >
-        <div className="max-w-xl mx-auto flex flex-col items-center gap-5">
-          <h2
-            className="font-bold text-white"
-            style={{ fontSize: "clamp(1.6rem, 3vw, 2.4rem)", fontFamily: "'DM Sans', sans-serif" }}
-          >
-            Your home is ready for you.
-          </h2>
-          <p style={{ color: "rgba(255,255,255,0.45)" }}>
-            Start a free conversation with FARKA — no account needed.
-          </p>
-          <Link
-            href="/chat"
-            className="inline-flex items-center gap-2 font-bold rounded-full px-10 py-4 text-white transition-all hover:scale-105 active:scale-95"
-            style={{
-              background: "linear-gradient(135deg, var(--teal), #14856a)",
-              boxShadow: "0 0 32px rgba(26,158,126,0.25)",
-            }}
-          >
-            {getText("start_chat", lang)} →
-          </Link>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
-            Available in Nepali &amp; English · Free forever
-          </p>
-        </div>
-      </section>
-
-      {/* ── Footer — spec text ── */}
-      <footer
-        className="relative z-20 py-8 px-6 text-center"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "var(--navy)" }}
-      >
-        <p className="text-sm" style={{ color: "rgba(255,255,255,0.2)" }}>
-          FARKA फर्क • Nepal-US Hackathon 2026
-        </p>
-      </footer>
-    </div>
+    </main>
   );
 }
