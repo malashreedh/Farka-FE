@@ -22,7 +22,7 @@ export default function Navbar() {
               className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--surface)] px-4 py-2 text-sm text-[color:var(--muted)] transition hover:border-[color:var(--line-strong)] hover:text-[color:var(--text)]"
             >
               <ArrowLeft size={15} />
-              Back
+              फर्क
             </button>
           ) : null}
 
