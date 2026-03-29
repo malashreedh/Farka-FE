@@ -26,7 +26,7 @@ import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
 import type { ChatMessage, Language, TradeCategoryEnum, WorkflowStage } from "@/lib/types";
 import { SKILL_TAGS } from "@/lib/types";
-import { BUSINESS_IDEA_SUGGESTIONS, DISTRICT_ACTIONS, DOMAIN_OPTIONS, PATH_ACTIONS, SAVINGS_ACTIONS } from "@/lib/workflows";
+import { BUSINESS_IDEA_SUGGESTIONS, DISTRICT_ACTIONS, PATH_ACTIONS, SAVINGS_ACTIONS } from "@/lib/workflows";
 
 const STAGE_LABELS: Record<WorkflowStage, string> = {
   initial: "Arrival",
@@ -208,13 +208,6 @@ export default function ChatPage() {
   const lastAssistantMessage = getLastAssistantMessage(messages).toLowerCase();
   const inferredTrade = inferTrade(messages);
   const visibleSkills = SKILL_TAGS[inferredTrade] ?? [];
-
-  const shouldShowDomainOptions =
-    stage === "collecting_basics" &&
-    (lastAssistantMessage.includes("type of work") ||
-      lastAssistantMessage.includes("work did you do") ||
-      lastAssistantMessage.includes("कस्तो काम") ||
-      lastAssistantMessage.includes("काम"));
 
   const shouldShowPathActions =
     stage === "path_decision" &&
@@ -497,23 +490,6 @@ export default function ChatPage() {
               ))}
 
               {sending ? <TypingIndicator language={language} /> : null}
-
-              {shouldShowDomainOptions ? (
-                <QuickActions
-                  title={language === "ne" ? "सामान्य कार्य क्षेत्र छान्नुस्" : "Choose a common work domain"}
-                  subtitle={
-                    language === "ne"
-                      ? "तपाईंको मुख्य कामसँग मिल्ने क्षेत्र रोज्न सक्नुहुन्छ।"
-                      : "Pick the closest work domain if typing it out feels slower."
-                  }
-                  actions={DOMAIN_OPTIONS.map((option) => ({
-                    label: language === "ne" ? option.titleNe : option.titleEn,
-                    description: language === "ne" ? option.introNe : option.introEn,
-                    value: language === "ne" ? option.samplePromptNe : option.samplePromptEn,
-                  }))}
-                  onSelect={(value) => submitMessage(value)}
-                />
-              ) : null}
 
               {stage === "collecting_skills" ? (
                 <section className="fade-in-up rounded-[28px] border border-white/8 bg-[color:var(--surface)] p-4 shadow-soft">
