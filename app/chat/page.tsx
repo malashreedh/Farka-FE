@@ -139,6 +139,7 @@ export default function ChatPage() {
   const [waveformLevels, setWaveformLevels] = useState<number[]>([]);
   const [playingAudio, setPlayingAudio] = useState(false);
   const [businessDistrict, setBusinessDistrict] = useState("");
+  const [customBusinessDistrict, setCustomBusinessDistrict] = useState("");
   const [businessSavings, setBusinessSavings] = useState("");
   const [businessIdea, setBusinessIdea] = useState("");
 
@@ -200,6 +201,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (stage !== "collecting_business_details") {
       setBusinessDistrict("");
+      setCustomBusinessDistrict("");
       setBusinessSavings("");
       setBusinessIdea("");
     }
@@ -225,9 +227,10 @@ export default function ChatPage() {
     (lastAssistantMessage.includes("savings") || lastAssistantMessage.includes("बचत"));
   const shouldShowBusinessPlanner = shouldShowBusinessDistricts || shouldShowBusinessSavings;
   const businessIdeaSuggestions = BUSINESS_IDEA_SUGGESTIONS[inferredTrade] ?? BUSINESS_IDEA_SUGGESTIONS.other;
+  const selectedBusinessDistrict = customBusinessDistrict.trim() || businessDistrict.trim();
   const canSubmitBusinessPlanner =
     stage === "collecting_business_details" &&
-    businessDistrict.trim().length > 0 &&
+    selectedBusinessDistrict.length > 0 &&
     businessSavings.trim().length > 0 &&
     businessIdea.trim().length > 2;
 
@@ -319,8 +322,8 @@ export default function ChatPage() {
 
     const content =
       language === "ne"
-        ? `जिल्ला ${businessDistrict}, बचत ${businessSavings}, र म ${businessIdea} सुरु गर्न चाहन्छु।`
-        : `Target district ${businessDistrict}, savings range ${businessSavings}, and I want to start ${businessIdea}.`;
+        ? `जिल्ला ${selectedBusinessDistrict}, बचत ${businessSavings}, र म ${businessIdea} सुरु गर्न चाहन्छु।`
+        : `Target district ${selectedBusinessDistrict}, savings range ${businessSavings}, and I want to start ${businessIdea}.`;
 
     await submitMessage(content);
   }
@@ -572,9 +575,12 @@ export default function ChatPage() {
                           <button
                             key={district}
                             type="button"
-                            onClick={() => setBusinessDistrict(district)}
+                            onClick={() => {
+                              setBusinessDistrict(district);
+                              setCustomBusinessDistrict("");
+                            }}
                             className={`rounded-[22px] border px-4 py-4 text-left text-sm font-semibold transition ${
-                              businessDistrict === district
+                              businessDistrict === district && !customBusinessDistrict
                                 ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                                 : "border-white/8 bg-[color:var(--surface-strong)] text-[color:var(--text)] hover:border-[color:var(--line-strong)] hover:bg-[color:var(--surface-highlight)]"
                             }`}
@@ -582,6 +588,19 @@ export default function ChatPage() {
                             {district}
                           </button>
                         ))}
+                      </div>
+                      <div className="mt-3 rounded-[22px] border border-white/10 bg-[color:var(--surface-strong)] px-4 py-3">
+                        <input
+                          value={customBusinessDistrict}
+                          onChange={(event) => {
+                            setCustomBusinessDistrict(event.target.value);
+                            if (event.target.value.trim()) {
+                              setBusinessDistrict("");
+                            }
+                          }}
+                          placeholder={language === "ne" ? "आफ्नो जिल्ला लेख्नुहोस्" : "Type another district"}
+                          className="w-full bg-transparent text-sm text-[color:var(--text)] outline-none placeholder:text-[color:var(--muted)]"
+                        />
                       </div>
                     </div>
 

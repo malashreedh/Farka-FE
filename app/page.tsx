@@ -58,21 +58,21 @@ export default function LandingPage() {
 
   return (
     <main className="page-shell">
-      <section className="mx-auto max-w-7xl px-4 pb-16 pt-8 md:px-8 md:pb-24">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.12fr_0.88fr] lg:gap-14">
+      <section className="mx-auto max-w-7xl px-4 pb-16 pt-6 md:px-8 md:pb-24">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.03fr_0.97fr] lg:gap-12">
           <div className="fade-in-up">
             <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line-strong)] bg-[color:var(--accent-soft)] px-4 py-2 text-xs uppercase tracking-[0.24em] text-[color:var(--accent)]">
               <Sparkles size={14} />
               {getText("landing_badge", language)}
             </div>
 
-            <h1 className="mt-6 max-w-4xl text-[clamp(3.2rem,7vw,6.4rem)] font-semibold leading-[0.95] tracking-[-0.06em] text-[color:var(--text)]">
+            <h1 className="mt-6 max-w-4xl text-[clamp(2.7rem,5.8vw,5.5rem)] font-semibold leading-[0.98] tracking-[-0.055em] text-[color:var(--text)]">
               {getText("landing_hero_line1", language)}
               <br />
               <span className="text-[color:var(--muted-strong)]">{getText("landing_hero_line2", language)}</span>
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-[color:var(--muted)] md:text-xl">
+            <p className="mt-6 max-w-xl text-lg leading-8 text-[color:var(--muted)] md:text-[1.1rem]">
               {getText("landing_body", language)}
             </p>
 
@@ -93,7 +93,7 @@ export default function LandingPage() {
               </a>
             </div>
 
-            <div className="mt-10 grid max-w-xl grid-cols-3 gap-4">
+            <div className="mt-10 grid max-w-lg grid-cols-3 gap-4">
               {trustStats.map((stat, index) => (
                 <div key={stat.label} className={`panel-subtle rounded-[24px] p-4 fade-in-up stagger-${index + 1}`}>
                   <p className="text-2xl font-semibold tracking-[-0.03em] text-[color:var(--accent)]">{stat.value}</p>
@@ -104,7 +104,7 @@ export default function LandingPage() {
           </div>
 
           <div className="fade-in-up stagger-2">
-            <div className="panel-raised relative overflow-hidden rounded-[36px] p-6 md:p-8">
+            <div className="panel-raised relative overflow-hidden rounded-[36px] p-5 md:p-7">
               <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,rgba(220,20,60,0.12),transparent_70%)]" />
 
               <div className="relative">

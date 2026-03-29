@@ -3,11 +3,12 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, CheckCheck, Landmark, ReceiptText, Store, Wallet } from "lucide-react";
+import { ArrowRight, CheckCheck, Store } from "lucide-react";
 
 import FinancialViabilityPanel from "@/components/FinancialViabilityPanel";
 import { useLanguage } from "@/components/LanguageProvider";
 import LoadingState from "@/components/LoadingState";
+import ResultsFollowUpChat from "@/components/ResultsFollowUpChat";
 import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
 import type { BusinessChecklist, ChecklistItem, Profile } from "@/lib/types";
@@ -188,49 +189,7 @@ function BusinessContent() {
           </div>
         </section>
 
-        <section className="panel-subtle rounded-[32px] p-6 md:p-8">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <div className="flex items-center gap-3">
-                <Landmark size={18} className="text-[color:var(--terracotta)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">
-                  {language === "ne" ? "कानुनी काम" : "Legal tasks"}
-                </p>
-              </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">
-                {language === "ne"
-                  ? "दर्ता र स्थानीय अनुपालनका कामहरू सुरुमै स्पष्ट राखिएका छन्।"
-                  : "Registration and local compliance are kept visible early."}
-              </p>
-            </div>
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <div className="flex items-center gap-3">
-                <Wallet size={18} className="text-[color:var(--accent)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">
-                  {language === "ne" ? "बजेट दबाब" : "Budget pressure"}
-                </p>
-              </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">
-                {language === "ne"
-                  ? "बचत र वित्तीय कदमहरू सँगै राखिएकाले योजना आर्थिक रूपमा यथार्थपरक रहन्छ।"
-                  : "Savings and financing steps are grouped so the plan stays financially realistic."}
-              </p>
-            </div>
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <div className="flex items-center gap-3">
-                <ReceiptText size={18} className="text-[color:var(--sage)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">
-                  {language === "ne" ? "कार्यान्वयनयोग्य योजना" : "Actionable output"}
-                </p>
-              </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">
-                {language === "ne"
-                  ? "हरेक चेकलिस्ट आइटम टगल गर्न मिल्छ, जसले प्रगति समीक्षा सफा बनाउँछ।"
-                  : "Every checklist item can be toggled, which makes demos and progress reviews cleaner."}
-              </p>
-            </div>
-          </div>
-        </section>
+        <ResultsFollowUpChat />
       </div>
 
       <div className="mt-8 space-y-5">
