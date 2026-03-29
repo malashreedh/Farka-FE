@@ -8,21 +8,25 @@ import {
   Clock3,
   HeartHandshake,
   Languages,
+  Mic,
   Send,
   Sparkles,
+  Square,
   Wrench,
 } from "lucide-react";
 
 import ChatBubble from "@/components/ChatBubble";
+import ProfileProgressCard from "@/components/ProfileProgressCard";
 import { useLanguage } from "@/components/LanguageProvider";
 import LoadingState from "@/components/LoadingState";
 import QuickActions from "@/components/QuickActions";
 import SkillTag from "@/components/SkillTag";
+import VoiceWaveform from "@/components/VoiceWaveform";
 import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
 import type { ChatMessage, Language, TradeCategoryEnum, WorkflowStage } from "@/lib/types";
 import { SKILL_TAGS } from "@/lib/types";
-import { DISTRICT_ACTIONS, DOMAIN_OPTIONS, PATH_ACTIONS, SAVINGS_ACTIONS } from "@/lib/workflows";
+import { BUSINESS_IDEA_SUGGESTIONS, DISTRICT_ACTIONS, DOMAIN_OPTIONS, PATH_ACTIONS, SAVINGS_ACTIONS } from "@/lib/workflows";
 
 const STAGE_LABELS: Record<WorkflowStage, string> = {
   initial: "Arrival",
@@ -131,6 +135,19 @@ export default function ChatPage() {
   const [redirectMessage, setRedirectMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [waveformLevels, setWaveformLevels] = useState<number[]>([]);
+  const [playingAudio, setPlayingAudio] = useState(false);
+  const [businessDistrict, setBusinessDistrict] = useState("");
+  const [businessSavings, setBusinessSavings] = useState("");
+  const [businessIdea, setBusinessIdea] = useState("");
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -170,6 +187,24 @@ export default function ChatPage() {
     sessionStorage.setItem("farka_lang", language);
   }, [language]);
 
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      void audioContextRef.current?.close().catch(() => undefined);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (stage !== "collecting_business_details") {
+      setBusinessDistrict("");
+      setBusinessSavings("");
+      setBusinessIdea("");
+    }
+  }, [stage]);
+
   const lastAssistantMessage = getLastAssistantMessage(messages).toLowerCase();
   const inferredTrade = inferTrade(messages);
   const visibleSkills = SKILL_TAGS[inferredTrade] ?? [];
@@ -195,6 +230,13 @@ export default function ChatPage() {
   const shouldShowBusinessSavings =
     stage === "collecting_business_details" &&
     (lastAssistantMessage.includes("savings") || lastAssistantMessage.includes("बचत"));
+  const shouldShowBusinessPlanner = shouldShowBusinessDistricts || shouldShowBusinessSavings;
+  const businessIdeaSuggestions = BUSINESS_IDEA_SUGGESTIONS[inferredTrade] ?? BUSINESS_IDEA_SUGGESTIONS.other;
+  const canSubmitBusinessPlanner =
+    stage === "collecting_business_details" &&
+    businessDistrict.trim().length > 0 &&
+    businessSavings.trim().length > 0 &&
+    businessIdea.trim().length > 2;
 
   async function submitMessage(overrideMessage?: string) {
     const content = (overrideMessage ?? input).trim();
@@ -275,6 +317,147 @@ export default function ChatPage() {
       return;
     }
     await submitMessage(selectedSkills.join(", "));
+  }
+
+  async function submitBusinessPlanner() {
+    if (!canSubmitBusinessPlanner) {
+      return;
+    }
+
+    const content =
+      language === "ne"
+        ? `जिल्ला ${businessDistrict}, बचत ${businessSavings}, र म ${businessIdea} सुरु गर्न चाहन्छु।`
+        : `Target district ${businessDistrict}, savings range ${businessSavings}, and I want to start ${businessIdea}.`;
+
+    await submitMessage(content);
+  }
+
+  function startVisualizer(stream: MediaStream) {
+    const audioContext = new window.AudioContext();
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 32;
+    source.connect(analyser);
+
+    audioContextRef.current = audioContext;
+    analyserRef.current = analyser;
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const update = () => {
+      analyser.getByteFrequencyData(dataArray);
+      setWaveformLevels(Array.from(dataArray.slice(0, 10)).map((value) => Math.max(0.16, value / 255)));
+      animationFrameRef.current = requestAnimationFrame(update);
+    };
+
+    update();
+  }
+
+  async function startRecording() {
+    if (!sessionId || sending || recording) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+      startVisualizer(stream);
+
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      recorder.onstop = async () => {
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+        setRecording(false);
+        setSending(true);
+
+        try {
+          const response = await api.sendVoiceMessage(sessionId, blob);
+          const nextLanguage = detectLanguage(response.message);
+          setLanguage(nextLanguage);
+          setMessages((current) => [
+            ...current,
+            { role: "user", content: response.transcript, timestamp: new Date().toISOString() },
+            { role: "assistant", content: response.message, timestamp: new Date().toISOString() },
+          ]);
+          setStage(response.stage);
+
+          if (response.profile_id) {
+            setProfileId(response.profile_id);
+            sessionStorage.setItem("farka_profile_id", response.profile_id);
+          }
+
+          if (response.audio_b64) {
+            setPlayingAudio(true);
+            const interval = window.setInterval(() => {
+              setWaveformLevels(Array.from({ length: 10 }, (_, index) => 0.2 + Math.abs(Math.sin(Date.now() / 180 + index)) * 0.65));
+            }, 120);
+            const audio = new Audio(`data:${response.audio_mime_type || "audio/mpeg"};base64,${response.audio_b64}`);
+            audio.onended = () => {
+              window.clearInterval(interval);
+              setPlayingAudio(false);
+              setWaveformLevels([]);
+            };
+            audio.onerror = () => {
+              window.clearInterval(interval);
+              setPlayingAudio(false);
+              setWaveformLevels([]);
+            };
+            void audio.play().catch(() => {
+              window.clearInterval(interval);
+              setPlayingAudio(false);
+              setWaveformLevels([]);
+            });
+          } else {
+            setWaveformLevels([]);
+          }
+
+          if (response.redirect && response.profile_id) {
+            const overlayMessage =
+              response.redirect === "jobs"
+                ? getText("loading_jobs", nextLanguage)
+                : getText("loading_checklist", nextLanguage);
+            setRedirectMessage(overlayMessage);
+
+            window.setTimeout(() => {
+              if (response.redirect === "jobs") {
+                router.push(`/results/jobs?profile_id=${response.profile_id}`);
+              } else {
+                router.push(`/results/business?profile_id=${response.profile_id}`);
+              }
+            }, 1400);
+          }
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : "Voice message failed.";
+          setMessages((current) => [
+            ...current,
+            { role: "assistant", content: detail, timestamp: new Date().toISOString() },
+          ]);
+          setWaveformLevels([]);
+        } finally {
+          setSending(false);
+        }
+      };
+
+      recorder.start();
+      setRecording(true);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Microphone access failed.";
+      setMessages((current) => [
+        ...current,
+        { role: "assistant", content: detail, timestamp: new Date().toISOString() },
+      ]);
+    }
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop();
   }
 
   if (loading) {
@@ -390,44 +573,128 @@ export default function ChatPage() {
                 />
               ) : null}
 
-              {shouldShowBusinessDistricts ? (
-                <QuickActions
-                  title={language === "ne" ? "लक्षित जिल्ला" : "Target district"}
-                  subtitle={
-                    language === "ne"
-                      ? "नेपाल फर्किएपछि काम वा व्यवसाय सुरु गर्न चाहेको जिल्ला छान्नुस्।"
-                      : "Choose the district you want to return to first."
-                  }
-                  actions={(language === "ne" ? DISTRICT_ACTIONS.ne : DISTRICT_ACTIONS.en).map((district) => ({
-                    label: district,
-                    value: district,
-                  }))}
-                  onSelect={(value) => submitMessage(value)}
-                  compact
-                />
-              ) : null}
+              {shouldShowBusinessPlanner ? (
+                <section className="fade-in-up rounded-[28px] border border-white/8 bg-[color:var(--surface)] p-4 shadow-soft">
+                  <div className="mb-4">
+                    <p className="text-sm font-semibold tracking-[0.08em] text-[color:var(--text)]">
+                      {language === "ne" ? "व्यवसाय योजना विवरण" : "Business plan details"}
+                    </p>
+                    <p className="mt-1 text-sm text-[color:var(--muted)]">
+                      {language === "ne"
+                        ? "जिल्ला, बचत, र सुरु गर्न चाहेको व्यवसाय छानिसकेपछि मात्र अगाडि बढ्छ।"
+                        : "We only continue once district, savings, and the business idea are all clear."}
+                    </p>
+                  </div>
 
-              {shouldShowBusinessSavings ? (
-                <QuickActions
-                  title={language === "ne" ? "बचतको दायरा" : "Savings band"}
-                  subtitle={
-                    language === "ne"
-                      ? "आफ्नो उपलब्ध बचतको नजिकको दायरा छान्नुस्।"
-                      : "Choose the closest savings range so the checklist stays realistic."
-                  }
-                  actions={(language === "ne" ? SAVINGS_ACTIONS.ne : SAVINGS_ACTIONS.en).map((band) => ({
-                    label: band,
-                    value: band,
-                  }))}
-                  onSelect={(value) => submitMessage(value)}
-                  compact
-                />
+                  <div className="space-y-5">
+                    <div>
+                      <p className="mb-2 text-sm font-medium text-[color:var(--text)]">
+                        {language === "ne" ? "लक्षित जिल्ला" : "Target district"}
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {(language === "ne" ? DISTRICT_ACTIONS.ne : DISTRICT_ACTIONS.en).map((district) => (
+                          <button
+                            key={district}
+                            type="button"
+                            onClick={() => setBusinessDistrict(district)}
+                            className={`rounded-[22px] border px-4 py-4 text-left text-sm font-semibold transition ${
+                              businessDistrict === district
+                                ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                                : "border-white/8 bg-[color:var(--surface-strong)] text-[color:var(--text)] hover:border-[color:var(--line-strong)] hover:bg-[color:var(--surface-highlight)]"
+                            }`}
+                          >
+                            {district}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-sm font-medium text-[color:var(--text)]">
+                        {language === "ne" ? "बचतको दायरा" : "Savings band"}
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {(language === "ne" ? SAVINGS_ACTIONS.ne : SAVINGS_ACTIONS.en).map((band) => (
+                          <button
+                            key={band}
+                            type="button"
+                            onClick={() => setBusinessSavings(band)}
+                            className={`rounded-[22px] border px-4 py-4 text-left text-sm font-semibold transition ${
+                              businessSavings === band
+                                ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                                : "border-white/8 bg-[color:var(--surface-strong)] text-[color:var(--text)] hover:border-[color:var(--line-strong)] hover:bg-[color:var(--surface-highlight)]"
+                            }`}
+                          >
+                            {band}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="mb-2 text-sm font-medium text-[color:var(--text)]">
+                        {language === "ne" ? "व्यवसायको विचार" : "Business idea"}
+                      </p>
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {businessIdeaSuggestions.map((idea) => (
+                          <button
+                            key={idea}
+                            type="button"
+                            onClick={() => setBusinessIdea(idea)}
+                            className={`rounded-full border px-4 py-2 text-sm transition ${
+                              businessIdea === idea
+                                ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                                : "border-[color:var(--line)] bg-[color:var(--surface-strong)] text-[color:var(--muted)] hover:border-[color:var(--line-strong)]"
+                            }`}
+                          >
+                            {idea}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="rounded-[22px] border border-white/10 bg-[color:var(--surface-strong)] px-4 py-3">
+                        <input
+                          value={businessIdea}
+                          onChange={(event) => setBusinessIdea(event.target.value)}
+                          placeholder={language === "ne" ? "उदाहरण: चिया तथा खाजा पसल" : "Example: tea and snacks shop"}
+                          className="w-full bg-transparent text-sm text-[color:var(--text)] outline-none placeholder:text-[color:var(--muted)]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={submitBusinessPlanner}
+                    disabled={!canSubmitBusinessPlanner || sending}
+                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-[color:var(--ink-strong)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ArrowRight size={16} />
+                    {language === "ne" ? "योजना बनाऊँ" : "Build my roadmap"}
+                  </button>
+                </section>
               ) : null}
 
               <div ref={messagesEndRef} />
             </div>
 
             <footer className="border-t border-[color:var(--line)] bg-[rgba(255,252,247,0.88)] px-4 py-4 backdrop-blur md:px-6">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <VoiceWaveform active={recording} playing={playingAudio} levels={waveformLevels} />
+                <button
+                  type="button"
+                  onClick={recording ? stopRecording : startRecording}
+                  disabled={sending || !sessionId}
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    recording
+                      ? "bg-[color:var(--accent)] text-white"
+                      : "border border-[color:var(--line)] bg-[color:var(--surface)] text-[color:var(--accent)]"
+                  } disabled:cursor-not-allowed disabled:opacity-45`}
+                >
+                  {recording ? <Square size={14} /> : <Mic size={14} />}
+                  {recording ? "Stop recording" : "Use voice"}
+                </button>
+              </div>
+
               <div className="flex items-end gap-3">
                 <div className="flex-1 rounded-[28px] border border-white/10 bg-[color:var(--surface)] px-4 py-3 shadow-soft">
                   <input
@@ -458,6 +725,8 @@ export default function ChatPage() {
           </div>
 
           <aside className="space-y-4">
+            <ProfileProgressCard stage={stage} />
+
             <div className="panel-subtle rounded-[30px] p-5">
               <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">What to expect</p>
               <div className="mt-5 space-y-4">
@@ -507,6 +776,13 @@ export default function ChatPage() {
                   If you already know what you want, say it directly and FARKA will move faster.
                 </p>
               </div>
+            </div>
+
+            <div className="panel-subtle rounded-[30px] p-5">
+              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Voice reply</p>
+              <p className="mt-3 text-sm leading-7 text-[color:var(--muted)]">
+                Record in Nepali or English. Farka will transcribe your message and play the response back when audio is available.
+              </p>
             </div>
           </aside>
         </section>

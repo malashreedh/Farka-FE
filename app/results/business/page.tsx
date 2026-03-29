@@ -5,20 +5,21 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, CheckCheck, Landmark, ReceiptText, Store, Wallet } from "lucide-react";
 
+import FinancialViabilityPanel from "@/components/FinancialViabilityPanel";
 import { useLanguage } from "@/components/LanguageProvider";
 import LoadingState from "@/components/LoadingState";
 import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
-import type { BusinessChecklist, ChecklistItem } from "@/lib/types";
+import type { BusinessChecklist, ChecklistItem, Profile } from "@/lib/types";
 
 function groupByWeek(items: ChecklistItem[]) {
-  const grouped = new Map<number, ChecklistItem[]>();
-  items.forEach((item) => {
-    const current = grouped.get(item.week) ?? [];
-    current.push(item);
-    grouped.set(item.week, current);
-  });
-  return [...grouped.entries()].sort((a, b) => a[0] - b[0]);
+    const grouped = new Map<number, ChecklistItem[]>();
+    items.forEach((item) => {
+        const current = grouped.get(item.week) ?? [];
+        current.push(item);
+        grouped.set(item.week, current);
+    });
+    return Array.from(grouped.entries()).sort((a, b) => a[0] - b[0]);
 }
 
 function ChecklistRow({
@@ -79,6 +80,7 @@ function BusinessContent() {
   const { language } = useLanguage();
 
   const [checklist, setChecklist] = useState<BusinessChecklist | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,10 +95,14 @@ function BusinessContent() {
       try {
         const existing = await api.getChecklist(profileId);
         setChecklist(existing);
+        const profileData = await api.getProfile(profileId);
+        setProfile(profileData);
       } catch {
         try {
           const generated = await api.generateChecklist(profileId);
           setChecklist(generated);
+          const profileData = await api.getProfile(profileId);
+          setProfile(profileData);
         } catch (generationError) {
           console.error(generationError);
           setError("We could not generate the business roadmap right now.");
@@ -203,6 +209,8 @@ function BusinessContent() {
       </div>
 
       <div className="mt-8 space-y-5">
+        {profileId ? <FinancialViabilityPanel profileId={profileId} profile={profile} /> : null}
+
         {groupedWeeks.map(([week, items]) => {
           const startIndex = checklist.checklist_items.findIndex((item) => item === items[0]);
           return (

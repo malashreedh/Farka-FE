@@ -73,6 +73,12 @@ export interface SendMessageResponse {
   redirect?: "jobs" | "checklist" | null;
 }
 
+export interface VoiceMessageResponse extends SendMessageResponse {
+  transcript: string;
+  audio_b64?: string | null;
+  audio_mime_type?: string;
+}
+
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
 export interface Profile {
@@ -115,6 +121,12 @@ export interface JobMatch {
   matched_tags: string[];
 }
 
+export interface JobDensity {
+  district: string;
+  trade_category: TradeCategoryEnum | string;
+  job_count: number;
+}
+
 // ─── Business Checklist ───────────────────────────────────────────────────────
 
 export interface ChecklistItem {
@@ -132,6 +144,28 @@ export interface BusinessChecklist {
   checklist_items: ChecklistItem[];
   raw_ai_output: string;
   created_at: string;
+}
+
+export interface BusinessViabilityOption {
+  title: string;
+  fit_reason: string;
+  startup_cost_npr: number;
+  working_capital_npr: number;
+  total_estimated_cost_npr: number;
+  savings_gap_npr: number;
+  break_even_months: number;
+  risk_level: "low" | "moderate" | "high";
+  monthly_revenue_range_npr: string;
+  monthly_cost_range_npr: string;
+  suggested_first_steps: string[];
+  ai_note?: string | null;
+}
+
+export interface BusinessViability {
+  trade_category: string;
+  district: string;
+  savings_amount_npr: number;
+  options: BusinessViabilityOption[];
 }
 
 // ─── Canonical Skill Tags (mirrors backend spec exactly) ──────────────────────

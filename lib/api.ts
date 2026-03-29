@@ -6,10 +6,13 @@
 import type {
   ApiResponse,
   BusinessChecklist,
+  BusinessViability,
+  JobDensity,
   JobMatch,
   Profile,
   SendMessageResponse,
   StartChatResponse,
+  VoiceMessageResponse,
 } from "@/lib/types";
 
 const BASE_URL =
@@ -23,6 +26,25 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       "Content-Type": "application/json",
       ...(options.headers ?? {}),
     },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({ detail: "Unknown error" }));
+    throw new Error(errorBody.detail ?? `HTTP ${response.status}`);
+  }
+
+  const json = await response.json();
+  if (json && typeof json === "object" && "data" in json) {
+    return (json as ApiResponse<T>).data;
+  }
+  return json as T;
+}
+
+async function apiFormFetch<T>(path: string, formData: FormData): Promise<T> {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    body: formData,
     cache: "no-store",
   });
 
@@ -61,6 +83,17 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       body: JSON.stringify({ session_id, content }),
     });
   }
+
+  export async function sendVoiceMessage(
+    session_id: string,
+    audio: Blob,
+    filename = "voice-message.webm",
+  ): Promise<VoiceMessageResponse> {
+    const formData = new FormData();
+    formData.append("session_id", session_id);
+    formData.append("audio", audio, filename);
+    return apiFormFetch<VoiceMessageResponse>("/chat/voice-message", formData);
+  }
   
   // ─── PROFILE ──────────────────────────────────────────────────────────────────
   
@@ -88,6 +121,10 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
    */
   export async function getJobMatches(profile_id: string): Promise<JobMatch[]> {
     return apiFetch<JobMatch[]>(`/jobs/matches/${profile_id}`);
+  }
+
+  export async function getJobDensity(): Promise<JobDensity[]> {
+    return apiFetch<JobDensity[]>("/jobs/density");
   }
   
   /**
@@ -127,6 +164,18 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
       body: JSON.stringify({ profile_id }),
     });
   }
+
+  export async function getBusinessViability(input: {
+    profile_id?: string;
+    trade_category?: string;
+    district?: string;
+    savings_amount_npr?: number;
+  }): Promise<BusinessViability> {
+    return apiFetch<BusinessViability>("/business/viability", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
   
   /**
    * PATCH /business/checklist/item
@@ -157,12 +206,15 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   export const api = {
     startChat,
     sendMessage,
+    sendVoiceMessage,
     getProfile,
     updateProfile,
+    getJobDensity,
     getJobMatches,
     triggerJobMatch,
     getChecklist,
     generateChecklist,
+    getBusinessViability,
     toggleChecklistItem,
     createSession,
   };
