@@ -77,7 +77,7 @@ function ChecklistRow({
 function BusinessContent() {
   const searchParams = useSearchParams();
   const profileId = searchParams.get("profile_id");
-  const { language } = useLanguage();
+  const { language: uiLanguage } = useLanguage();
 
   const [checklist, setChecklist] = useState<BusinessChecklist | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -125,7 +125,7 @@ function BusinessContent() {
   }
 
   if (loading) {
-    return <LoadingState message={getText("loading_checklist", language)} />;
+    return <LoadingState message={getText("loading_checklist", profile?.language_pref ?? uiLanguage)} />;
   }
 
   if (error || !checklist) {
@@ -146,6 +146,7 @@ function BusinessContent() {
   const total = checklist.checklist_items.length;
   const progress = total ? Math.round((completed / total) * 100) : 0;
   const groupedWeeks = groupByWeek(checklist.checklist_items);
+  const language = profile?.language_pref ?? uiLanguage;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
@@ -157,21 +158,27 @@ function BusinessContent() {
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Business roadmap</p>
+              
               <h1 className="mt-1 text-4xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">{getText("your_checklist", language)}</h1>
             </div>
           </div>
 
           <p className="mt-6 text-lg leading-8 text-[color:var(--muted)]">
-            This is a grounded launch sequence shaped by trade, district, and savings, so the plan feels like a practical first month rather than generic motivation.
+            {language === "ne"
+              ? "यो रोडम्याप व्यापार, जिल्ला र बचतको आधारमा बनाइएको व्यवहारिक सुरुआती योजना हो, सामान्य प्रेरणादायी पाठ होइन।"
+              : "This is a grounded launch sequence shaped by trade, district, and savings, so the plan feels practical rather than generic."}
           </p>
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">District</p>
+              
               <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">{checklist.district}</p>
             </div>
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">Trade</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">
+                {language === "ne" ? "क्षेत्र" : "Trade"}
+              </p>
               <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--accent)]">{checklist.trade}</p>
             </div>
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
@@ -186,23 +193,41 @@ function BusinessContent() {
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
               <div className="flex items-center gap-3">
                 <Landmark size={18} className="text-[color:var(--terracotta)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">Legal tasks</p>
+                <p className="text-sm font-semibold text-[color:var(--text)]">
+                  {language === "ne" ? "कानुनी काम" : "Legal tasks"}
+                </p>
               </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Registration and local compliance are kept visible early.</p>
+              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">
+                {language === "ne"
+                  ? "दर्ता र स्थानीय अनुपालनका कामहरू सुरुमै स्पष्ट राखिएका छन्।"
+                  : "Registration and local compliance are kept visible early."}
+              </p>
             </div>
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
               <div className="flex items-center gap-3">
                 <Wallet size={18} className="text-[color:var(--accent)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">Budget pressure</p>
+                <p className="text-sm font-semibold text-[color:var(--text)]">
+                  {language === "ne" ? "बजेट दबाब" : "Budget pressure"}
+                </p>
               </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Savings and financing steps are grouped so the plan stays financially realistic.</p>
+              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">
+                {language === "ne"
+                  ? "बचत र वित्तीय कदमहरू सँगै राखिएकाले योजना आर्थिक रूपमा यथार्थपरक रहन्छ।"
+                  : "Savings and financing steps are grouped so the plan stays financially realistic."}
+              </p>
             </div>
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
               <div className="flex items-center gap-3">
                 <ReceiptText size={18} className="text-[color:var(--sage)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">Actionable output</p>
+                <p className="text-sm font-semibold text-[color:var(--text)]">
+                  {language === "ne" ? "कार्यान्वयनयोग्य योजना" : "Actionable output"}
+                </p>
               </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Every checklist item can be toggled, which makes demos and progress reviews cleaner.</p>
+              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">
+                {language === "ne"
+                  ? "हरेक चेकलिस्ट आइटम टगल गर्न मिल्छ, जसले प्रगति समीक्षा सफा बनाउँछ।"
+                  : "Every checklist item can be toggled, which makes demos and progress reviews cleaner."}
+              </p>
             </div>
           </div>
         </section>
@@ -223,7 +248,9 @@ function BusinessContent() {
                   </h2>
                 </div>
                 <p className="text-sm text-[color:var(--muted)]">
-                  {items.filter((item) => item.done).length}/{items.length} tasks complete
+                  {language === "ne"
+                    ? `${items.filter((item) => item.done).length}/${items.length} काम पूरा`
+                    : `${items.filter((item) => item.done).length}/${items.length} tasks complete`}
                 </p>
               </div>
 
