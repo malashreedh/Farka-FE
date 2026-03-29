@@ -4,21 +4,17 @@ import Link from "next/link";
 import {
   ArrowRight,
   BriefcaseBusiness,
-  Building2,
   Compass,
+  HandHelping,
   Landmark,
-  MapPinned,
   MessageSquareHeart,
   MountainSnow,
   Sparkles,
   Store,
 } from "lucide-react";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { getText } from "@/lib/language";
-import type { Language } from "@/lib/types";
-import { DOMAIN_OPTIONS } from "@/lib/workflows";
-
-const language: Language = "en";
 
 const featureCards = [
   {
@@ -45,12 +41,14 @@ const featureCards = [
 ];
 
 const trustStats = [
-  { value: "6", label: "guided work domains" },
-  { value: "2", label: "return pathways" },
-  { value: "1", label: "conversation-led profile" },
+  { value: "2", label: "clear next-step options" },
+  { value: "1", label: "simple guided conversation" },
+  { value: "0", label: "forms to fill first" },
 ];
 
 export default function LandingPage() {
+  const { language } = useLanguage();
+
   return (
     <main className="page-shell">
       <section className="mx-auto max-w-7xl px-4 pb-16 pt-8 md:px-8 md:pb-24">
@@ -66,7 +64,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[color:var(--muted)] md:text-xl">
-              FARKA helps Nepali workers abroad map what comes next at home, whether that means a grounded job search or a small business plan that fits their savings, skills, and district.
+              FARKA helps Nepali workers abroad understand what is realistically possible back in Nepal, then guides them toward either a job opportunity or a small-business plan.
             </p>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -81,7 +79,7 @@ export default function LandingPage() {
                 href="#how-it-works"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-[color:var(--surface)] px-6 py-4 text-sm font-semibold text-[color:var(--text)] transition hover:border-[color:var(--line-strong)]"
               >
-                See how it flows
+                How it works
                 <Compass size={16} />
               </a>
             </div>
@@ -103,8 +101,8 @@ export default function LandingPage() {
               <div className="relative">
                 <div className="mb-6 flex items-center justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Live assistant flow</p>
-                    <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">Built for voice-like conversation</h2>
+                    <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">A calmer way to begin</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">Start with your story, not a long form.</h2>
                   </div>
                   <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--terracotta)]">
                     <MountainSnow size={24} />
@@ -119,7 +117,7 @@ export default function LandingPage() {
                   </div>
                   <div className="rounded-[28px] rounded-tl-md border border-[color:var(--line-strong)] bg-[color:var(--accent-soft)] p-5">
                     <p className="text-sm leading-7 text-[color:var(--text)]">
-                      FARKA understands the work domain, years of experience, and location, then gently asks whether the next step should be job matching or a business checklist.
+                      FARKA keeps the conversation simple, understands the important details, and moves you toward the most useful next step.
                     </p>
                   </div>
                 </div>
@@ -128,21 +126,21 @@ export default function LandingPage() {
                   <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
                     <div className="flex items-center gap-3">
                       <Landmark size={18} className="text-[color:var(--terracotta)]" />
-                      <p className="text-sm font-semibold text-[color:var(--text)]">Local context</p>
+                      <p className="text-sm font-semibold text-[color:var(--text)]">Made for Nepal</p>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">Jobs, districts, and planning are framed around Nepal, not abstract templates.</p>
+                    <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">Recommendations are framed around returning home, not generic global advice.</p>
                   </div>
                   <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
                     <div className="flex items-center gap-3">
-                      <MapPinned size={18} className="text-[color:var(--accent)]" />
-                      <p className="text-sm font-semibold text-[color:var(--text)]">Guided when useful</p>
+                      <HandHelping size={18} className="text-[color:var(--accent)]" />
+                      <p className="text-sm font-semibold text-[color:var(--text)]">Helpful, not overwhelming</p>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">Cards and chips appear only when they make the next answer easier.</p>
+                    <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">You can type naturally, and the app only steps in when a choice becomes easier with guidance.</p>
                   </div>
                 </div>
               </div>
 
-              <div className="hero-mountain mt-8 h-24 w-full bg-[linear-gradient(180deg,rgba(207,108,78,0.38),rgba(18,24,38,0.8))]" />
+              <div className="hero-mountain mt-8 h-24 w-full bg-[linear-gradient(180deg,rgba(220,20,60,0.34),rgba(240,246,255,0.95))]" />
             </div>
           </div>
         </div>
@@ -155,7 +153,7 @@ export default function LandingPage() {
             One conversation, then a clear next step.
           </h2>
           <p className="mt-4 text-lg leading-8 text-[color:var(--muted)]">
-            The product stays conversational, but still collects enough structure to match jobs or generate a practical business roadmap.
+            We keep the experience simple for the person using it: talk naturally, get understood, then see a path forward.
           </p>
         </div>
 
@@ -177,40 +175,28 @@ export default function LandingPage() {
       </section>
 
       <section id="paths" className="mx-auto max-w-7xl px-4 py-8 md:px-8 md:py-16">
-        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="panel-subtle rounded-[32px] p-6">
-            <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Common pathways</p>
-            <h2 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">
-              Start from the work people actually did abroad.
-            </h2>
-            <p className="mt-4 text-lg leading-8 text-[color:var(--muted)]">
-              The guided domains make the conversation faster without turning the experience into a form. These are prompts, not constraints.
-            </p>
-
-            <div className="mt-8 rounded-[28px] border border-white/8 bg-[color:var(--surface)] p-5">
-              <div className="flex items-center gap-3">
-                <Building2 size={18} className="text-[color:var(--terracotta)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">Two outcome paths</p>
-              </div>
-              <div className="mt-4 space-y-3 text-sm leading-7 text-[color:var(--muted)]">
-                <p>Job seekers are redirected to ranked roles based on experience and skill tags.</p>
-                <p>Business starters get a Nepal-grounded launch checklist shaped by district and savings.</p>
-              </div>
+        <div className="grid gap-5 md:grid-cols-2">
+          <article className="panel-subtle rounded-[32px] p-6">
+            <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--accent)]">
+              <BriefcaseBusiness size={22} />
             </div>
-          </div>
+            <p className="mt-5 text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">For jobs</p>
+            <h3 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">See what roles could actually fit.</h3>
+            <p className="mt-4 text-base leading-8 text-[color:var(--muted)]">
+              Share where you are, what you did abroad, and how much experience you have. FARKA helps you move toward relevant roles in Nepal.
+            </p>
+          </article>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {DOMAIN_OPTIONS.map((domain, index) => (
-              <article key={domain.key} className={`panel-subtle rounded-[28px] p-5 fade-in-up stagger-${(index % 3) + 1}`}>
-                <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted-strong)]">{domain.key}</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">{domain.titleEn}</h3>
-                <p className="mt-3 text-sm leading-7 text-[color:var(--muted)]">{domain.introEn}</p>
-                <div className="mt-4 rounded-[20px] border border-white/8 bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--text)]">
-                  {domain.samplePromptEn}
-                </div>
-              </article>
-            ))}
-          </div>
+          <article className="panel-subtle rounded-[32px] p-6">
+            <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--terracotta)]">
+              <Store size={22} />
+            </div>
+            <p className="mt-5 text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">For business</p>
+            <h3 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">Turn savings and experience into a plan.</h3>
+            <p className="mt-4 text-base leading-8 text-[color:var(--muted)]">
+              If returning home means starting something of your own, FARKA helps shape a realistic checklist based on your district and savings.
+            </p>
+          </article>
         </div>
       </section>
 
@@ -218,12 +204,12 @@ export default function LandingPage() {
         <div className="panel-raised rounded-[36px] px-6 py-10 md:px-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Ready to test the live flow?</p>
+              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Ready to begin?</p>
               <h2 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">
-                Use the official conversation flow, then plug the results straight into the backend.
+                Start with a simple conversation and see what could be waiting back home.
               </h2>
               <p className="mt-4 text-lg leading-8 text-[color:var(--muted)]">
-                This frontend is built to stay compatible with the backend contract while feeling calm, modern, and much closer to a real product.
+                The experience is designed to feel clear, calm, and human from the first message.
               </p>
             </div>
 
@@ -238,7 +224,7 @@ export default function LandingPage() {
         </div>
 
         <footer className="mt-8 flex flex-col gap-3 border-t border-white/8 pt-6 text-sm text-[color:var(--muted)] md:flex-row md:items-center md:justify-between">
-          <p>FARKA is a Nepal-first return-planning experience for workers coming home with skills, savings, and hard-earned experience.</p>
+          <p>FARKA is a Nepal-first planning experience for workers returning home with skills, savings, and hard-earned experience.</p>
           <p className="uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">Built for the Nepal-US Hackathon</p>
         </footer>
       </section>

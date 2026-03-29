@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, CheckCheck, Landmark, ReceiptText, Store, Wallet } from "lucide-react";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import LoadingState from "@/components/LoadingState";
 import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
-import type { BusinessChecklist, ChecklistItem, Language } from "@/lib/types";
+import type { BusinessChecklist, ChecklistItem } from "@/lib/types";
 
 function groupByWeek(items: ChecklistItem[]) {
   const grouped = new Map<number, ChecklistItem[]>();
@@ -75,18 +76,11 @@ function ChecklistRow({
 function BusinessContent() {
   const searchParams = useSearchParams();
   const profileId = searchParams.get("profile_id");
+  const { language } = useLanguage();
 
   const [checklist, setChecklist] = useState<BusinessChecklist | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [language, setLanguage] = useState<Language>("en");
-
-  useEffect(() => {
-    const savedLanguage = sessionStorage.getItem("farka_lang") as Language | null;
-    if (savedLanguage) {
-      setLanguage(savedLanguage);
-    }
-  }, []);
 
   useEffect(() => {
     if (!profileId) {

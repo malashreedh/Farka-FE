@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 
+import { LanguageProvider } from "@/components/LanguageProvider";
 import Navbar from "@/components/Navbar";
 
 import "./globals.css";
@@ -30,8 +31,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} bg-[color:var(--bg)] antialiased`}>
-        <Navbar />
-        <main className="pt-24">{children}</main>
+        <LanguageProvider>
+          <Navbar />
+          <main className="pt-24">{children}</main>
+        </LanguageProvider>
       </body>
     </html>
   );

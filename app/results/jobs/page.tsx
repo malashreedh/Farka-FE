@@ -12,10 +12,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import LoadingState from "@/components/LoadingState";
 import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
-import type { JobMatch, Language } from "@/lib/types";
+import type { JobMatch } from "@/lib/types";
 
 function MatchBar({ value }: { value: number }) {
   return (
@@ -28,8 +29,10 @@ function MatchBar({ value }: { value: number }) {
   );
 }
 
-function JobCard({ match, language }: { match: JobMatch; language: Language }) {
+function JobCard({ match, language }: { match: JobMatch; language: "en" | "ne" }) {
   const percentage = Math.round(match.match_score * 100);
+  const [expanded, setExpanded] = useState(false);
+  const hasExternalUrl = Boolean(match.job.apply_url && /^https?:\/\//.test(match.job.apply_url));
 
   return (
     <article className="panel-subtle rounded-[28px] p-5">
@@ -76,14 +79,43 @@ function JobCard({ match, language }: { match: JobMatch; language: Language }) {
           ) : null}
         </div>
 
-        <Link
-          href={match.job.apply_url || "#"}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--accent)] transition hover:brightness-110"
-        >
-          {getText("view_details", language)}
-          <ArrowRight size={15} />
-        </Link>
+        {hasExternalUrl ? (
+          <a
+            href={match.job.apply_url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--accent)] transition hover:brightness-110"
+          >
+            {getText("view_details", language)}
+            <ArrowRight size={15} />
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setExpanded((current) => !current)}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--accent)] transition hover:brightness-110"
+          >
+            {expanded ? "Hide details" : "More details"}
+            <ArrowRight size={15} className={expanded ? "rotate-90 transition-transform" : "transition-transform"} />
+          </button>
+        )}
       </div>
+
+      {!hasExternalUrl && expanded ? (
+        <div className="mt-4 rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface)] p-4 text-sm leading-7 text-[color:var(--muted)]">
+          <p className="font-semibold text-[color:var(--text)]">{match.job.title}</p>
+          <p className="mt-2">
+            {language === "ne"
+              ? "यो भूमिकाको बाह्य आवेदन लिंक अहिले उपलब्ध छैन। तर यो सूचीमा किन परेको हो भनेर तलको विवरणबाट बुझ्न सकिन्छ।"
+              : "A direct application link is not available yet, but the role details below explain why this match appears in your shortlist."}
+          </p>
+          <p className="mt-2">
+            {language === "ne"
+              ? `संगठन: ${match.job.org_name} • जिल्ला: ${match.job.district}`
+              : `Organization: ${match.job.org_name} • District: ${match.job.district}`}
+          </p>
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -91,18 +123,11 @@ function JobCard({ match, language }: { match: JobMatch; language: Language }) {
 function ResultsContent() {
   const searchParams = useSearchParams();
   const profileId = searchParams.get("profile_id");
+  const { language } = useLanguage();
 
   const [matches, setMatches] = useState<JobMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [language, setLanguage] = useState<Language>("en");
-
-  useEffect(() => {
-    const savedLanguage = sessionStorage.getItem("farka_lang") as Language | null;
-    if (savedLanguage) {
-      setLanguage(savedLanguage);
-    }
-  }, []);
 
   useEffect(() => {
     if (!profileId) {

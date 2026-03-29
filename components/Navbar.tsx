@@ -4,20 +4,22 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, MessageSquareMore, Mountain, Sparkles } from "lucide-react";
 
+import LanguageToggle from "@/components/LanguageToggle";
+
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const isHomePage = pathname === "/";
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-[rgba(10,13,21,0.74)] backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-[color:var(--line)] bg-[rgba(255,252,247,0.82)] backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
         <div className="flex items-center gap-4">
           {!isHomePage ? (
             <button
               type="button"
               onClick={() => router.back()}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[color:var(--surface)] px-4 py-2 text-sm text-[color:var(--muted)] transition hover:border-[color:var(--line-strong)] hover:text-[color:var(--text)]"
+              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--surface)] px-4 py-2 text-sm text-[color:var(--muted)] transition hover:border-[color:var(--line-strong)] hover:text-[color:var(--text)]"
             >
               <ArrowLeft size={15} />
               Back
@@ -30,7 +32,7 @@ export default function Navbar() {
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-[0.3em] text-[color:var(--muted-strong)]">Farka</p>
-              <p className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--text)]">Return with direction</p>
+              <p className="text-lg font-semibold tracking-[-0.03em] text-[color:var(--text)]">फर्क | Find your path home</p>
             </div>
           </Link>
         </div>
@@ -46,7 +48,7 @@ export default function Navbar() {
             href="/#paths"
             className="rounded-full px-4 py-2 text-sm text-[color:var(--muted)] transition hover:text-[color:var(--text)]"
           >
-            Pathways
+            About
           </Link>
           <Link
             href="/chat"
@@ -55,6 +57,7 @@ export default function Navbar() {
             <MessageSquareMore size={16} />
             Start chat
           </Link>
+          <LanguageToggle />
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[color:var(--surface)] px-4 py-2 text-xs uppercase tracking-[0.24em] text-[color:var(--muted-strong)]">
             <Sparkles size={14} />
             Nepal-first

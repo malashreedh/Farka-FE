@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Bot,
-  BriefcaseBusiness,
-  ChevronRight,
-  MapPin,
+  Clock3,
+  HeartHandshake,
+  Languages,
   Send,
   Sparkles,
-  UserRound,
   Wrench,
 } from "lucide-react";
 
 import ChatBubble from "@/components/ChatBubble";
+import { useLanguage } from "@/components/LanguageProvider";
 import LoadingState from "@/components/LoadingState";
 import QuickActions from "@/components/QuickActions";
 import SkillTag from "@/components/SkillTag";
@@ -120,13 +120,13 @@ export default function ChatPage() {
   const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const { language, setLanguage } = useLanguage();
 
   const [sessionId, setSessionId] = useState("");
   const [profileId, setProfileId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [stage, setStage] = useState<WorkflowStage>("initial");
-  const [language, setLanguage] = useState<Language>("en");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [redirectMessage, setRedirectMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -294,16 +294,16 @@ export default function ChatPage() {
       <main className="page-shell">
         <section className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[1.55fr_0.75fr] lg:px-8">
           <div className="panel-raised flex min-h-[75vh] flex-col overflow-hidden rounded-[32px]">
-            <header className="flex items-center justify-between border-b border-white/8 px-5 py-4 md:px-7">
+            <header className="flex items-center justify-between border-b border-[color:var(--line)] px-5 py-4 md:px-7">
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">
-                  Conversational Guide
+                  फर्क chat
                 </p>
                 <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">
-                  Build the profile naturally
+                  Tell us a little about your situation
                 </h1>
               </div>
-              <div className="hidden rounded-full border border-white/10 bg-[color:var(--surface-strong)] px-4 py-2 text-xs uppercase tracking-[0.2em] text-[color:var(--accent)] md:block">
+              <div className="hidden rounded-full border border-[color:var(--line)] bg-[color:var(--surface-strong)] px-4 py-2 text-xs uppercase tracking-[0.2em] text-[color:var(--accent)] md:block">
                 {STAGE_LABELS[stage]}
               </div>
             </header>
@@ -427,7 +427,7 @@ export default function ChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            <footer className="border-t border-white/8 bg-[rgba(13,18,31,0.82)] px-4 py-4 backdrop-blur md:px-6">
+            <footer className="border-t border-[color:var(--line)] bg-[rgba(255,252,247,0.88)] px-4 py-4 backdrop-blur md:px-6">
               <div className="flex items-end gap-3">
                 <div className="flex-1 rounded-[28px] border border-white/10 bg-[color:var(--surface)] px-4 py-3 shadow-soft">
                   <input
@@ -459,38 +459,36 @@ export default function ChatPage() {
 
           <aside className="space-y-4">
             <div className="panel-subtle rounded-[30px] p-5">
-              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Session summary</p>
+              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">What to expect</p>
               <div className="mt-5 space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="rounded-2xl border border-white/10 bg-[color:var(--surface-strong)] p-2 text-[color:var(--accent)]">
-                    <Sparkles size={16} />
+                    <HeartHandshake size={16} />
                   </div>
                   <div>
-                    <p className="text-sm text-[color:var(--muted)]">Current focus</p>
-                    <p className="mt-1 text-base font-semibold text-[color:var(--text)]">{STAGE_LABELS[stage]}</p>
+                    <p className="text-sm text-[color:var(--muted)]">Friendly guidance</p>
+                    <p className="mt-1 text-base font-semibold text-[color:var(--text)]">The chat keeps things simple and asks only what matters next.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="rounded-2xl border border-white/10 bg-[color:var(--surface-strong)] p-2 text-[color:var(--terracotta)]">
-                    <UserRound size={16} />
+                    <Clock3 size={16} />
                   </div>
                   <div>
-                    <p className="text-sm text-[color:var(--muted)]">Profile status</p>
-                    <p className="mt-1 text-base font-semibold text-[color:var(--text)]">
-                      {profileId ? "Profile in progress" : "Collecting details"}
-                    </p>
+                    <p className="text-sm text-[color:var(--muted)]">Quick to complete</p>
+                    <p className="mt-1 text-base font-semibold text-[color:var(--text)]">Most people can reach results in just a few messages.</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="rounded-2xl border border-white/10 bg-[color:var(--surface-strong)] p-2 text-[color:var(--saffron)]">
-                    <MapPin size={16} />
+                    <Languages size={16} />
                   </div>
                   <div>
-                    <p className="text-sm text-[color:var(--muted)]">Language mode</p>
+                    <p className="text-sm text-[color:var(--muted)]">Language support</p>
                     <p className="mt-1 text-base font-semibold text-[color:var(--text)]">
-                      {language === "ne" ? "Nepali" : "English"}
+                      You can continue in {language === "ne" ? "Nepali" : "English"}.
                     </p>
                   </div>
                 </div>
@@ -498,15 +496,15 @@ export default function ChatPage() {
             </div>
 
             <div className="panel-subtle rounded-[30px] p-5">
-              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">How this stays smooth</p>
+              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">A few tips</p>
               <div className="mt-4 space-y-3 text-sm leading-7 text-[color:var(--muted)]">
                 <p className="flex gap-3">
-                  <BriefcaseBusiness size={16} className="mt-1 shrink-0 text-[color:var(--accent)]" />
-                  The conversation remains primary. Quick actions only appear when they help the current question.
+                  <Sparkles size={16} className="mt-1 shrink-0 text-[color:var(--accent)]" />
+                  You can type naturally, and suggested choices will only appear when they are helpful.
                 </p>
                 <p className="flex gap-3">
-                  <ChevronRight size={16} className="mt-1 shrink-0 text-[color:var(--terracotta)]" />
-                  You can type naturally in one long sentence or use the guided cards when you want speed.
+                  <ArrowRight size={16} className="mt-1 shrink-0 text-[color:var(--terracotta)]" />
+                  If you already know what you want, say it directly and FARKA will move faster.
                 </p>
               </div>
             </div>

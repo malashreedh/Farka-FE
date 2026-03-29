@@ -3,24 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0b1020;
-  --bg-elevated: #10182e;
-  --surface: rgba(22, 30, 49, 0.92);
-  --surface-strong: rgba(29, 38, 60, 0.96);
-  --surface-highlight: rgba(36, 46, 71, 0.98);
-  --text: #eef2f7;
-  --muted: #a8b2c7;
-  --muted-strong: #c4cfdf;
-  --ink-strong: #160f08;
-  --accent: #e8b257;
-  --accent-soft: rgba(232, 178, 87, 0.12);
-  --terracotta: #cf6c4e;
-  --terracotta-soft: rgba(207, 108, 78, 0.12);
-  --sage: #87a88d;
-  --sage-soft: rgba(135, 168, 141, 0.12);
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(232, 178, 87, 0.32);
-  --shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  --bg: #f7f3ed;
+  --bg-elevated: #fffdf9;
+  --surface: rgba(255, 253, 249, 0.96);
+  --surface-strong: rgba(251, 246, 239, 0.98);
+  --surface-highlight: rgba(248, 240, 230, 0.98);
+  --text: #1e1b16;
+  --muted: #6f6559;
+  --muted-strong: #857868;
+  --ink-strong: #fffaf2;
+  --accent: #dc143c;
+  --accent-soft: rgba(220, 20, 60, 0.12);
+  --terracotta: #003893;
+  --terracotta-soft: rgba(0, 56, 147, 0.11);
+  --sage: #1f6f5f;
+  --sage-soft: rgba(31, 111, 95, 0.12);
+  --line: rgba(52, 39, 26, 0.08);
+  --line-strong: rgba(220, 20, 60, 0.22);
+  --shadow: 0 28px 70px rgba(56, 39, 19, 0.08);
 }
 
 * {
@@ -34,9 +34,9 @@ html {
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(232, 178, 87, 0.09), transparent 26%),
-    radial-gradient(circle at top right, rgba(207, 108, 78, 0.08), transparent 24%),
-    linear-gradient(180deg, #0c1120 0%, #0b1020 45%, #10192d 100%);
+    radial-gradient(circle at top left, rgba(220, 20, 60, 0.08), transparent 26%),
+    radial-gradient(circle at top right, rgba(0, 56, 147, 0.08), transparent 22%),
+    linear-gradient(180deg, #fffdf9 0%, #f8f2ea 48%, #f6efe5 100%);
   color: var(--text);
   font-family: var(--font-geist-sans), sans-serif;
 }
@@ -62,8 +62,8 @@ input {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(80, 58, 32, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 58, 32, 0.025) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(circle at center, black 18%, transparent 88%);
   opacity: 0.18;
@@ -71,15 +71,15 @@ input {
 
 .panel-raised {
   background:
-    linear-gradient(180deg, rgba(19, 26, 42, 0.96), rgba(13, 18, 31, 0.96));
+    linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(249, 242, 233, 0.98));
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
 }
 
 .panel-subtle {
-  background: linear-gradient(180deg, rgba(18, 24, 39, 0.92), rgba(13, 18, 30, 0.92));
+  background: linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(248, 241, 232, 0.96));
   border: 1px solid var(--line);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 18px 48px rgba(71, 52, 29, 0.08);
 }
 
 .shadow-panel {
@@ -87,7 +87,7 @@ input {
 }
 
 .shadow-soft {
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 16px 34px rgba(71, 52, 29, 0.08);
 }
 
 .fade-in-up {
@@ -116,7 +116,7 @@ input {
 
 .chat-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  scrollbar-color: rgba(89, 68, 42, 0.16) transparent;
 }
 
 .chat-scroll::-webkit-scrollbar {
@@ -124,7 +124,7 @@ input {
 }
 
 .chat-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(89, 68, 42, 0.16);
   border-radius: 999px;
 }
 
