@@ -155,53 +155,60 @@ function BusinessContent() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
-      {/* ── HEADER ── */}
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="panel-raised rounded-[32px] p-6 md:p-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--terracotta)]">
-              <Store size={24} />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Business roadmap</p>
-              <h1 className="mt-1 text-4xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">{getText("your_checklist", language)}</h1>
-            </div>
+    <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <section className="panel-raised rounded-[32px] p-6 md:p-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--terracotta)]">
+            <Store size={24} />
           </div>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">District</p>
-              <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">{checklist.district}</p>
-            </div>
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">Trade</p>
-              <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--accent)]">{checklist.trade}</p>
-            </div>
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">{getText("progress_label", language)}</p>
-              <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--sage)]">{progress}%</p>
-            </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Business roadmap</p>
+            <h1 className="mt-1 text-4xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">{getText("your_checklist", language)}</h1>
           </div>
-        </section>
+        </div>
 
-        <section className="panel-subtle rounded-[32px] p-6 md:p-8">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <div className="flex items-center gap-3">
-                <Landmark size={18} className="text-[color:var(--terracotta)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">Legal tasks</p>
-              </div>
+        <p className="mt-6 text-lg leading-8 text-[color:var(--muted)]">
+          This is a grounded launch sequence shaped by trade, district, and savings, so the plan feels like a practical first month rather than generic motivation.
+        </p>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
+            <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">District</p>
+            <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">{checklist.district}</p>
+          </div>
+          <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
+            <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">Trade</p>
+            <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--accent)]">{checklist.trade}</p>
+          </div>
+          <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
+            <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">{getText("progress_label", language)}</p>
+            <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--sage)]">{progress}%</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel-subtle rounded-[32px] p-6 md:p-8">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
+            <div className="flex items-center gap-3">
+              <Landmark size={18} className="text-[color:var(--terracotta)]" />
+              <p className="text-sm font-semibold text-[color:var(--text)]">Legal tasks</p>
             </div>
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
+            <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Registration and local compliance are kept visible early.</p>
+          </div>
+          <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
               <div className="flex items-center gap-3">
                 <Wallet size={18} className="text-[color:var(--accent)]" />
                 <p className="text-sm font-semibold text-[color:var(--text)]">Budgeting</p>
               </div>
+              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Savings and financing steps are grouped so the plan stays financially realistic.</p>
             </div>
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
               <div className="flex items-center gap-3">
                 <ReceiptText size={18} className="text-[color:var(--sage)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">Actionable</p>
+                <p className="text-sm font-semibold text-[color:var(--text)]">Actionable output</p>
               </div>
+              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Every checklist item can be toggled, which makes demos and progress reviews cleaner.</p>
             </div>
           </div>
         </section>
