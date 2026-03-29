@@ -8,6 +8,16 @@ export const DISTRICT_COORDINATES: Record<string, [number, number]> = {
   Butwal: [27.7, 83.45],
 };
 
+export const DISTRICT_POSITIONS: Record<string, { x: number; y: number }> = {
+  Kathmandu: { x: 56, y: 48 },
+  Lalitpur: { x: 58, y: 52 },
+  Bhaktapur: { x: 64, y: 47 },
+  Pokhara: { x: 37, y: 42 },
+  Chitwan: { x: 50, y: 58 },
+  Butwal: { x: 28, y: 62 },
+  Biratnagar: { x: 84, y: 58 },
+};
+
 export const TRADE_COLORS: Record<string, string> = {
   construction: "#dc143c",
   hospitality: "#003893",
