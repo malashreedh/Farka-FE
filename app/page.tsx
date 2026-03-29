@@ -101,41 +101,53 @@ export default function LandingPage() {
               <div className="relative">
                 <div className="mb-6 flex items-center justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">A calmer way to begin</p>
-                    <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">Start with your story, not a long form.</h2>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Path Analysis Found</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">Dubai expertise to <br/>Butwal enterprise.</h2>
                   </div>
                   <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--terracotta)]">
-                    <MountainSnow size={24} />
+                    <Sparkles size={24} />
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <div className="rounded-[28px] border border-white/8 bg-[color:var(--surface)] p-5">
-                    <p className="text-sm leading-7 text-[color:var(--text)]">
-                      “I&apos;m in Qatar. I worked in hotel operations for 5 years and now I&apos;m thinking about returning to Pokhara.”
+                  <div className="rounded-[28px] border border-white/8 bg-[color:var(--surface)] p-6">
+                    <p className="text-sm italic leading-relaxed text-[color:var(--text)]">
+                      “I spent 7 years as an MEP lead in Dubai. I have savings and want to open a workshop in Butwal.”
                     </p>
                   </div>
-                  <div className="rounded-[28px] rounded-tl-md border border-[color:var(--line-strong)] bg-[color:var(--accent-soft)] p-5">
-                    <p className="text-sm leading-7 text-[color:var(--text)]">
-                      FARKA keeps the conversation simple, understands the important details, and moves you toward the most useful next step.
-                    </p>
+                  
+                  <div className="rounded-[28px] border border-[color:var(--line-strong)] bg-[color:var(--accent-soft)] p-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-[color:var(--muted-strong)]">Market Need</p>
+                        <p className="mt-1 text-sm font-bold text-[color:var(--accent)]">High Demand</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-[color:var(--muted-strong)]">Eligibility</p>
+                        <p className="mt-1 text-sm font-bold text-amber-500">SME Grant</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center gap-2 border-t border-[color:var(--line-strong)] pt-4">
+                      <BriefcaseBusiness size={14} className="text-[color:var(--accent)]" />
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--accent)]">18 Verified Matches Nearby</p>
+                    </div>
                   </div>
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
                   <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
                     <div className="flex items-center gap-3">
-                      <Landmark size={18} className="text-[color:var(--terracotta)]" />
+                      <Landmark size={18} className="text-[#3b82f6]" />
                       <p className="text-sm font-semibold text-[color:var(--text)]">Made for Nepal</p>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">Recommendations are framed around returning home, not generic global advice.</p>
+                    <p className="mt-2 text-xs leading-5 text-[color:var(--muted)]">Local costs, real districts, and government schemes.</p>
                   </div>
                   <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
                     <div className="flex items-center gap-3">
-                      <HandHelping size={18} className="text-[color:var(--accent)]" />
-                      <p className="text-sm font-semibold text-[color:var(--text)]">Helpful, not overwhelming</p>
+                      <HandHelping size={18} className="text-[color:var(--terracotta)]" />
+                      <p className="text-sm font-semibold text-[color:var(--text)]">Calm & Simple</p>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">You can type naturally, and the app only steps in when a choice becomes easier with guidance.</p>
+                    <p className="mt-2 text-xs leading-5 text-[color:var(--muted)]">No passwords or CVs. Just talk to get started.</p>
                   </div>
                 </div>
               </div>
