@@ -45,12 +45,13 @@ function KanbanCard({
   }
 
   return (
-    <div className={`group rounded-[20px] border p-4 transition-all ${
+    /* FIXED HEIGHT: Set to 200px. flex-col ensures header and footer stay put */
+    <div className={`group flex flex-col justify-between rounded-[24px] border p-5 transition-all h-[200px] w-full ${
       item.done 
       ? "border-[color:var(--sage)]/20 bg-[color:var(--sage)]/5 opacity-70" 
       : "border-white/8 bg-[color:var(--surface)] shadow-sm hover:border-white/20"
     }`}>
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 h-full overflow-hidden">
         <button
           type="button"
           onClick={handleToggle}
@@ -63,24 +64,27 @@ function KanbanCard({
         >
           <CheckCheck size={12} />
         </button>
-        <div className="flex-1 min-w-0">
+        
+        {/* SCROLLABLE CONTENT: If task is long, this area scrolls internally */}
+        <div className="flex-1 h-full overflow-y-auto pr-1 scrollbar-thin">
           <span className="text-[9px] font-bold uppercase tracking-wider text-[color:var(--accent)]">
             {item.category}
           </span>
           <p className={`mt-2 text-sm leading-relaxed font-medium ${item.done ? "text-[color:var(--muted)] line-through" : "text-[color:var(--text)]"}`}>
             {item.task}
           </p>
-          
-          <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
-             <div className="flex items-center gap-1 text-[10px] font-bold text-[color:var(--accent)]">
-                <Wallet size={12} />
-                NPR —
-             </div>
-             <div className="flex items-center gap-1 text-[10px] text-[color:var(--muted-strong)] cursor-pointer hover:text-white transition">
-                Docs <ExternalLink size={10} />
-             </div>
-          </div>
         </div>
+      </div>
+      
+      {/* FOOTER: Stays fixed at the bottom of the 200px card */}
+      <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-3 shrink-0">
+         <div className="flex items-center gap-1 text-[10px] font-bold text-[color:var(--accent)]">
+            <Wallet size={12} />
+            NPR —
+         </div>
+         <div className="flex items-center gap-1 text-[10px] text-[color:var(--muted-strong)] cursor-pointer hover:text-white transition">
+            Docs <ExternalLink size={10} />
+         </div>
       </div>
     </div>
   );
@@ -151,7 +155,7 @@ function BusinessContent() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
-      {/* ── ORIGINAL HEADER BOXES ── */}
+      {/* ── HEADER ── */}
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <section className="panel-raised rounded-[32px] p-6 md:p-8">
           <div className="flex items-center gap-3">
@@ -163,9 +167,6 @@ function BusinessContent() {
               <h1 className="mt-1 text-4xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">{getText("your_checklist", language)}</h1>
             </div>
           </div>
-          <p className="mt-6 text-lg leading-8 text-[color:var(--muted)]">
-            This is a grounded launch sequence shaped by trade, district, and savings.
-          </p>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">District</p>
@@ -189,21 +190,18 @@ function BusinessContent() {
                 <Landmark size={18} className="text-[color:var(--terracotta)]" />
                 <p className="text-sm font-semibold text-[color:var(--text)]">Legal tasks</p>
               </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Registration and local compliance.</p>
             </div>
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
               <div className="flex items-center gap-3">
                 <Wallet size={18} className="text-[color:var(--accent)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">Budget pressure</p>
+                <p className="text-sm font-semibold text-[color:var(--text)]">Budgeting</p>
               </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Savings and financing steps.</p>
             </div>
             <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
               <div className="flex items-center gap-3">
                 <ReceiptText size={18} className="text-[color:var(--sage)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">Actionable output</p>
+                <p className="text-sm font-semibold text-[color:var(--text)]">Actionable</p>
               </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Toggle items for cleaner progress reviews.</p>
             </div>
           </div>
         </section>
@@ -212,45 +210,32 @@ function BusinessContent() {
       <div className="mt-8 space-y-8">
         {profileId ? <FinancialViabilityPanel profileId={profileId} profile={profile} /> : null}
 
-        {/* ── NEW SECTION HEADER ── */}
+        {/* ── KANBAN SECTION HEADER ── */}
         <div className="flex flex-col gap-4 border-t border-white/5 pt-10 md:flex-row md:items-end md:justify-between">
            <div className="max-w-xl">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white/40">
                  <LayoutDashboard size={12} />
                  Interactive Board
               </div>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-[color:var(--text)]">Weekly Implementation Plan</h2>
-              <p className="mt-2 text-sm text-[color:var(--muted)]">
-                 Scroll horizontally to see your full roadmap. Toggle tasks as you complete them to keep your launch on schedule.
-              </p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-[color:var(--text)]">Implementation Plan</h2>
            </div>
-           
-           <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 rounded-2xl bg-white/5 px-4 py-2 text-xs font-semibold">
-                 <span className="h-2 w-2 rounded-full bg-[color:var(--accent)] animate-pulse" />
-                 Live Updates Active
-              </div>
+           <div className="flex items-center gap-2 rounded-2xl bg-white/5 px-4 py-2 text-xs font-semibold">
+              <span className="h-2 w-2 rounded-full bg-[color:var(--accent)] animate-pulse" />
+              Live Updates Active
            </div>
         </div>
 
-        {/* ── HORIZONTAL KANBAN SCROLL ── */}
-        <div className="overflow-x-auto pb-8 outline-none scrollbar-hide">
-          <div className="flex gap-6 min-w-max">
+        {/* ── KANBAN BOARD ── */}
+        <div className="overflow-x-auto pb-8 scrollbar-hide">
+          <div className="flex gap-6 min-w-max items-stretch">
             {kanbanWeeks.map(([week, entries]) => (
               <div key={week} className="w-[310px] flex flex-col gap-5">
-                <div className="flex items-end justify-between px-2">
-                  <div>
+                <div className="px-2">
                     <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[color:var(--muted-strong)]">{getText("week_label", language)}</p>
-                    <h3 className="text-lg font-bold text-[color:var(--text)]">
-                       Week {week}
-                    </h3>
-                  </div>
-                  <span className="rounded-md bg-white/5 px-2 py-1 text-[10px] font-bold text-white/30">
-                     {entries.length} Tasks
-                  </span>
+                    <h3 className="text-lg font-bold text-[color:var(--text)]">Week {week}</h3>
                 </div>
                 
-                <div className="flex flex-col gap-3 rounded-[28px] bg-white/[0.02] p-3 ring-1 ring-white/5 min-h-[400px]">
+                <div className="flex flex-col gap-4 rounded-[32px] bg-white/[0.02] p-4 ring-1 ring-white/5 h-full min-h-[500px]">
                   {entries.map(({ item, originalIndex }) => (
                     <KanbanCard
                       key={`${week}-${originalIndex}`}
@@ -262,8 +247,6 @@ function BusinessContent() {
                 </div>
               </div>
             ))}
-            
-            {/* Visual Spacer for end of scroll */}
             <div className="w-8 shrink-0" />
           </div>
         </div>
@@ -275,7 +258,7 @@ function BusinessContent() {
 export default function BusinessResultsPage() {
   return (
     <main className="page-shell">
-      <Suspense fallback={<LoadingState message="Loading business roadmap..." />}>
+      <Suspense fallback={<LoadingState message="Loading roadmap..." />}>
         <BusinessContent />
       </Suspense>
     </main>
