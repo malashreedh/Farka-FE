@@ -12,13 +12,13 @@ import { getText } from "@/lib/language";
 import type { BusinessChecklist, ChecklistItem } from "@/lib/types";
 
 function groupByWeek(items: ChecklistItem[]) {
-  const grouped = new Map<number, ChecklistItem[]>();
-  items.forEach((item) => {
-    const current = grouped.get(item.week) ?? [];
-    current.push(item);
-    grouped.set(item.week, current);
-  });
-  return [...grouped.entries()].sort((a, b) => a[0] - b[0]);
+    const grouped = new Map<number, ChecklistItem[]>();
+    items.forEach((item) => {
+        const current = grouped.get(item.week) ?? [];
+        current.push(item);
+        grouped.set(item.week, current);
+    });
+    return Array.from(grouped.entries()).sort((a, b) => a[0] - b[0]);
 }
 
 function ChecklistRow({
