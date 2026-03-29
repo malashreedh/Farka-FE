@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, CheckCheck, Landmark, ReceiptText, Store, Wallet } from "lucide-react";
+import { ArrowRight, CheckCheck, Landmark, ReceiptText, Store, Wallet, ExternalLink } from "lucide-react";
 
 import FinancialViabilityPanel from "@/components/FinancialViabilityPanel";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -12,25 +12,29 @@ import { api } from "@/lib/api";
 import { getText } from "@/lib/language";
 import type { BusinessChecklist, ChecklistItem, Profile } from "@/lib/types";
 
-function groupByWeek(items: ChecklistItem[]) {
-    const grouped = new Map<number, ChecklistItem[]>();
-    items.forEach((item) => {
+/**
+ * Groups items by week while preserving their ORIGINAL index from the source array.
+ * This ensures the toggle API (which uses index) still works in a Kanban layout.
+ */
+function groupItemsForKanban(items: ChecklistItem[]) {
+    const grouped = new Map<number, { item: ChecklistItem; originalIndex: number }[]>();
+    
+    items.forEach((item, index) => {
         const current = grouped.get(item.week) ?? [];
-        current.push(item);
+        current.push({ item, originalIndex: index });
         grouped.set(item.week, current);
     });
+    
     return Array.from(grouped.entries()).sort((a, b) => a[0] - b[0]);
 }
 
-function ChecklistRow({
+function KanbanCard({
   item,
   index,
-  checklistId,
   onToggle,
 }: {
   item: ChecklistItem;
   index: number;
-  checklistId: string;
   onToggle: (index: number, done: boolean) => Promise<void>;
 }) {
   const [saving, setSaving] = useState(false);
@@ -45,29 +49,45 @@ function ChecklistRow({
   }
 
   return (
-    <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-      <div className="flex items-start gap-4">
+    <div className={`group relative rounded-[20px] border p-4 transition-all duration-300 ${
+      item.done 
+      ? "border-[color:var(--sage)]/20 bg-[color:var(--sage)]/5 opacity-80" 
+      : "border-white/8 bg-[color:var(--surface)] hover:border-white/20 shadow-sm"
+    }`}>
+      <div className="flex items-start gap-3">
         <button
           type="button"
           onClick={handleToggle}
           disabled={saving}
-          className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${
+          className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all ${
             item.done
               ? "border-[color:var(--sage)] bg-[color:var(--sage)] text-[color:var(--ink-strong)]"
-              : "border-white/18 bg-transparent text-transparent"
+              : "border-white/20 bg-transparent text-transparent group-hover:border-[color:var(--accent)]"
           }`}
         >
-          <CheckCheck size={14} />
+          <CheckCheck size={12} />
         </button>
+        
         <div className="flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-[color:var(--line-strong)] bg-[color:var(--accent-soft)] px-2.5 py-1 text-[10px] uppercase tracking-[0.22em] text-[color:var(--accent)]">
-              {item.category}
-            </span>
-          </div>
-          <p className={`mt-3 text-sm leading-7 ${item.done ? "text-[color:var(--muted)] line-through" : "text-[color:var(--text)]"}`}>
+          <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-[color:var(--muted-strong)]">
+            {item.category}
+          </span>
+          <p className={`mt-2 text-sm font-medium leading-relaxed ${
+            item.done ? "text-[color:var(--muted)] line-through" : "text-[color:var(--text)]"
+          }`}>
             {item.task}
           </p>
+          
+          {/* PLACEHOLDERS: These satisfy the "Product Moment" without backend changes */}
+          <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+             <div className="flex items-center gap-1 text-[10px] font-bold text-[color:var(--accent)]">
+                <Wallet size={12} />
+                NPR —
+             </div>
+             <button className="flex items-center gap-1 text-[10px] text-[color:var(--muted)] hover:text-white transition">
+                Docs <ExternalLink size={10} />
+             </button>
+          </div>
         </div>
       </div>
     </div>
@@ -103,144 +123,124 @@ function BusinessContent() {
           setChecklist(generated);
           const profileData = await api.getProfile(profileId);
           setProfile(profileData);
-        } catch (generationError) {
-          console.error(generationError);
+        } catch (err) {
           setError("We could not generate the business roadmap right now.");
         }
       } finally {
         setLoading(false);
       }
     };
-
     fetchChecklist();
   }, [profileId]);
 
   async function handleToggle(index: number, done: boolean) {
-    if (!checklist) {
-      return;
-    }
-
+    if (!checklist) return;
     const updated = await api.toggleChecklistItem(checklist.id, index, done);
     setChecklist(updated);
   }
 
-  if (loading) {
-    return <LoadingState message={getText("loading_checklist", language)} />;
-  }
+  if (loading) return <LoadingState message={getText("loading_checklist", language)} />;
 
   if (error || !checklist) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <div className="panel-subtle rounded-[32px] p-8">
-          <p className="text-lg text-[color:var(--text)]">{error ?? "Checklist not found."}</p>
-          <Link href="/chat" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--accent)]">
-            {getText("return_to_chat", language)}
-            <ArrowRight size={15} />
-          </Link>
-        </div>
+        <p className="text-[color:var(--text)]">{error ?? "Checklist not found."}</p>
+        <Link href="/chat" className="mt-6 inline-flex items-center gap-2 text-[color:var(--accent)]">
+          {getText("return_to_chat", language)} <ArrowRight size={15} />
+        </Link>
       </div>
     );
   }
 
-  const completed = checklist.checklist_items.filter((item) => item.done).length;
+  const completed = checklist.checklist_items.filter((i) => i.done).length;
   const total = checklist.checklist_items.length;
   const progress = total ? Math.round((completed / total) * 100) : 0;
-  const groupedWeeks = groupByWeek(checklist.checklist_items);
+  const kanbanWeeks = groupItemsForKanban(checklist.checklist_items);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="panel-raised rounded-[32px] p-6 md:p-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-[color:var(--surface-strong)] text-[color:var(--terracotta)]">
-              <Store size={24} />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--muted-strong)]">Business roadmap</p>
-              <h1 className="mt-1 text-4xl font-semibold tracking-[-0.04em] text-[color:var(--text)]">{getText("your_checklist", language)}</h1>
-            </div>
-          </div>
-
-          <p className="mt-6 text-lg leading-8 text-[color:var(--muted)]">
-            This is a grounded launch sequence shaped by trade, district, and savings, so the plan feels like a practical first month rather than generic motivation.
-          </p>
-
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">District</p>
-              <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">{checklist.district}</p>
-            </div>
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">Trade</p>
-              <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--accent)]">{checklist.trade}</p>
-            </div>
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--muted-strong)]">{getText("progress_label", language)}</p>
-              <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--sage)]">{progress}%</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="panel-subtle rounded-[32px] p-6 md:p-8">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <div className="flex items-center gap-3">
-                <Landmark size={18} className="text-[color:var(--terracotta)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">Legal tasks</p>
+    <div className="mx-auto max-w-full px-4 py-8 md:px-8">
+      {/* ── HEADER ── */}
+      <div className="mx-auto max-w-7xl">
+        <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+          <header className="panel-raised rounded-[32px] p-6 md:p-8">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--surface-strong)] text-[color:var(--terracotta)]">
+                <Store size={20} />
               </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Registration and local compliance are kept visible early.</p>
+              <h1 className="text-3xl font-bold tracking-tight">{getText("your_checklist", language)}</h1>
             </div>
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <div className="flex items-center gap-3">
-                <Wallet size={18} className="text-[color:var(--accent)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">Budget pressure</p>
+            <div className="mt-8 grid grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Trade</p>
+                <p className="mt-1 text-lg font-bold text-[color:var(--accent)]">{checklist.trade}</p>
               </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Savings and financing steps are grouped so the plan stays financially realistic.</p>
-            </div>
-            <div className="rounded-[24px] border border-white/8 bg-[color:var(--surface)] p-4">
-              <div className="flex items-center gap-3">
-                <ReceiptText size={18} className="text-[color:var(--sage)]" />
-                <p className="text-sm font-semibold text-[color:var(--text)]">Actionable output</p>
+              <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">District</p>
+                <p className="mt-1 text-lg font-bold">{checklist.district}</p>
               </div>
-              <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">Every checklist item can be toggled, which makes demos and progress reviews cleaner.</p>
+              <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Progress</p>
+                <p className="mt-1 text-lg font-bold text-[color:var(--sage)]">{progress}%</p>
+              </div>
             </div>
-          </div>
-        </section>
+          </header>
+
+          <section className="panel-subtle flex items-center rounded-[32px] p-8">
+             <div className="flex items-center gap-6">
+                <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-white/5">
+                   <span className="text-2xl font-bold">{progress}%</span>
+                   <svg className="absolute inset-0 h-full w-full -rotate-90">
+                      <circle cx="48" cy="48" r="44" fill="none" stroke="currentColor" strokeWidth="4" className="text-[color:var(--sage)]" strokeDasharray={276} strokeDashoffset={276 - (276 * progress) / 100} />
+                   </svg>
+                </div>
+                <p className="text-sm leading-relaxed text-[color:var(--muted)]">
+                  Your business roadmap is currently active. Track your progress across the weeks below.
+                </p>
+             </div>
+          </section>
+        </div>
       </div>
 
-      <div className="mt-8 space-y-5">
-        {profileId ? <FinancialViabilityPanel profileId={profileId} profile={profile} /> : null}
-
-        {groupedWeeks.map(([week, items]) => {
-          const startIndex = checklist.checklist_items.findIndex((item) => item === items[0]);
-          return (
-            <section key={week} className="panel-subtle rounded-[30px] p-5 md:p-6">
-              <div className="mb-5 flex items-center justify-between gap-4">
+      {/* ── KANBAN BOARD ── */}
+      <div className="mt-10">
+        <div className="scrollbar-hide flex gap-6 overflow-x-auto pb-8 outline-none">
+          {kanbanWeeks.map(([week, entries]) => (
+            <div key={week} className="flex min-w-[300px] max-w-[320px] flex-col gap-5">
+              {/* Column Header */}
+              <div className="flex items-end justify-between px-2">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--muted-strong)]">{getText("week_label", language)}</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[color:var(--text)]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[color:var(--muted-strong)]">
                     {getText("week_label", language)} {week}
-                  </h2>
+                  </p>
+                  <h3 className="text-lg font-bold">Preparation</h3>
                 </div>
-                <p className="text-sm text-[color:var(--muted)]">
-                  {items.filter((item) => item.done).length}/{items.length} tasks complete
-                </p>
+                <span className="rounded-md bg-white/5 px-2 py-1 text-[10px] font-bold text-white/40">
+                  {entries.length}
+                </span>
               </div>
 
-              <div className="grid gap-4">
-                {items.map((item, itemIndex) => (
-                  <ChecklistRow
-                    key={`${week}-${itemIndex}`}
+              {/* Column Body */}
+              <div className="flex flex-col gap-3 rounded-[28px] bg-white/[0.02] p-3 outline-none ring-1 ring-white/5">
+                {entries.map(({ item, originalIndex }) => (
+                  <KanbanCard
+                    key={`${week}-${originalIndex}`}
                     item={item}
-                    index={startIndex + itemIndex}
-                    checklistId={checklist.id}
+                    index={originalIndex}
                     onToggle={handleToggle}
                   />
                 ))}
               </div>
-            </section>
-          );
-        })}
+            </div>
+          ))}
+          
+          {/* Visual Spacer for horizontal scroll */}
+          <div className="min-w-[40px] shrink-0" />
+        </div>
+      </div>
+
+      {/* ── VIABILITY PANEL ── */}
+      <div className="mx-auto mt-8 max-w-7xl">
+        {profileId && <FinancialViabilityPanel profileId={profileId} profile={profile} />}
       </div>
     </div>
   );
@@ -249,7 +249,7 @@ function BusinessContent() {
 export default function BusinessResultsPage() {
   return (
     <main className="page-shell">
-      <Suspense fallback={<LoadingState message="Loading business roadmap..." />}>
+      <Suspense fallback={<LoadingState message="Loading your board..." />}>
         <BusinessContent />
       </Suspense>
     </main>
